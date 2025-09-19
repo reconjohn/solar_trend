@@ -75,7 +75,8 @@ s_dat_compare <- s_dat_compare %>%
 
   # scale
   mutate(across(
-    .cols = setdiff(names(.), c("zone", "treat", "class","region")),
+    .cols = setdiff(names(.), c("zone", "treat", "class","region",
+                                names(.)[str_detect(names(.), "lulc")])),
     .fns = ~ scale(.) %>% as.numeric()
   )) %>%
   
@@ -148,107 +149,107 @@ mask_solar <- function(rast_file, solar_absence_roi){
     terra::mask(mask = solar_absence_roi)
 }
 
-### solar prediction
-s_dat_t <- solar.cov.bg %>%
-  filter(group == 5) %>%
-  dplyr::select(-group) %>%
-  rbind(solar.cov.existing) %>%
-  mutate(treat = factor(treat)) %>%
-  na.omit()
-
-glm1_solar <- glm(treat ~ tx + landAcq + roads + slope + pop + hail + fire
-                  + community + lowincome + minority + unemploy +
-                    lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
-                    region_mw + region_ne +  region_s + region_tex + region_w + region_mtw +
-                    env + cf + lag,
-                  data=s_dat_t, family = binomial(link="logit"))
-
-
-solar.pg.project <- predict(object = solar_IV, model = glm1_solar, type = "response", ext=extent(solar_IV))
-# plot(solar.pg.project)
-# plot(aoi_vect, add=TRUE)
-writeRaster(solar.pg.project, "./trend/data/pred_logReg_s_project.tif", overwrite=TRUE)
-plot(rast("./trend/data/pred_logReg_s_project.tif"))
-
-### queue prediction
-s_dat_inter <- solar.cov.bg.inter %>%
-  filter(group == 5) %>%
-  dplyr::select(-group) %>%
-  rbind(solar.cov.existing.inter) %>%
-  mutate(treat = factor(treat)) %>%
-  na.omit()
-
-
-glm1_solar <- glm(treat ~ tx + landAcq + roads + slope + pop + hail + fire + community + lowincome + minority + unemploy +
-                    lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
-                    region_mw + region_ne +  region_s + region_tex + region_w + region_mtw +
-                    env + cf + lag,
-                  data=s_dat_inter, family = binomial(link="logit"))
-# summary(glm1_solar)
-
-solar.pg.inter <- predict(object = solar_IV_new, model = glm1_solar, type = "response", ext=extent(solar_IV_new))
-# plot(solar.pg.inter)
-# plot(aoi_vect, add=TRUE)
-writeRaster(solar.pg.inter, "./trend/data/pred_logReg_s_queue.tif", overwrite=TRUE)
-plot(rast("./trend/data/pred_logReg_s_queue.tif"))
-
-### project substation prediction
-s_dat_sub <- solar.cov.bg.sub %>%
-  filter(group == 5) %>%
-  dplyr::select(-group) %>%
-  rbind(solar.cov.existing.sub) %>%
-  mutate(treat = factor(treat)) %>%
-  na.omit()
-
-
-glm1_solar <- glm(treat ~ tx + landAcq + roads + slope + pop + hail + fire + community + lowincome + minority + unemploy +
-                    lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
-                    region_mw + region_ne +  region_s + region_tex + region_w + region_mtw +
-                    env + cf + lag,
-                  data=s_dat_sub, family = binomial(link="logit"))
-# summary(glm1_solar)
-
-solar.pg.sub <- predict(object = solar_IV, model = glm1_solar, type = "response", ext=extent(solar_IV))
-writeRaster(solar.pg.sub, "./trend/data/pred_logReg_s_sub.tif", overwrite=TRUE)
-plot(rast("./trend/data/pred_logReg_s_sub.tif"))
-
-
-pred_logReg_s <- rast("./trend/data/pred_logReg_s_project.tif")
-pred_logReg_s_inter <- rast("./trend/data/pred_logReg_s_queue.tif")
-pred_logReg_s_sub <- rast("./trend/data/pred_logReg_s_sub.tif")
-
-results <- list(pred_logReg_s, pred_logReg_s_sub, pred_logReg_s_inter)
-
-new_results <- list()
-for(i in 1:3){
-  new_results[i] <- mask_solar(results[[i]], rast(solar_absence_roi))
-}
-
-writeRaster(rast(new_results), "./trend/data/trend_surface.tif", overwrite=TRUE)
+# ### solar prediction
+# s_dat_t <- solar.cov.bg %>%
+#   filter(group == 5) %>%
+#   dplyr::select(-group) %>%
+#   rbind(solar.cov.existing) %>%
+#   mutate(treat = factor(treat)) %>%
+#   na.omit()
+# 
+# glm1_solar <- glm(treat ~ tx + landAcq + roads + slope + pop + hail + fire
+#                   + community + lowincome + minority + unemploy +
+#                     lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
+#                     region_mw + region_ne +  region_s + region_tex + region_w + region_mtw +
+#                     env + cf + lag,
+#                   data=s_dat_t, family = binomial(link="logit"))
+# 
+# 
+# solar.pg.project <- predict(object = solar_IV, model = glm1_solar, type = "response", ext=extent(solar_IV))
+# # plot(solar.pg.project)
+# # plot(aoi_vect, add=TRUE)
+# writeRaster(solar.pg.project, "./trend/data/pred_logReg_s_project.tif", overwrite=TRUE)
+# plot(rast("./trend/data/pred_logReg_s_project.tif"))
+# 
+# ### queue prediction
+# s_dat_inter <- solar.cov.bg.inter %>%
+#   filter(group == 5) %>%
+#   dplyr::select(-group) %>%
+#   rbind(solar.cov.existing.inter) %>%
+#   mutate(treat = factor(treat)) %>%
+#   na.omit()
+# 
+# 
+# glm1_solar <- glm(treat ~ tx + landAcq + roads + slope + pop + hail + fire + community + lowincome + minority + unemploy +
+#                     lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
+#                     region_mw + region_ne +  region_s + region_tex + region_w + region_mtw +
+#                     env + cf + lag,
+#                   data=s_dat_inter, family = binomial(link="logit"))
+# # summary(glm1_solar)
+# 
+# solar.pg.inter <- predict(object = solar_IV_new, model = glm1_solar, type = "response", ext=extent(solar_IV_new))
+# # plot(solar.pg.inter)
+# # plot(aoi_vect, add=TRUE)
+# writeRaster(solar.pg.inter, "./trend/data/pred_logReg_s_queue.tif", overwrite=TRUE)
+# plot(rast("./trend/data/pred_logReg_s_queue.tif"))
+# 
+# ### project substation prediction
+# s_dat_sub <- solar.cov.bg.sub %>%
+#   filter(group == 5) %>%
+#   dplyr::select(-group) %>%
+#   rbind(solar.cov.existing.sub) %>%
+#   mutate(treat = factor(treat)) %>%
+#   na.omit()
+# 
+# 
+# glm1_solar <- glm(treat ~ tx + landAcq + roads + slope + pop + hail + fire + community + lowincome + minority + unemploy +
+#                     lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
+#                     region_mw + region_ne +  region_s + region_tex + region_w + region_mtw +
+#                     env + cf + lag,
+#                   data=s_dat_sub, family = binomial(link="logit"))
+# # summary(glm1_solar)
+# 
+# solar.pg.sub <- predict(object = solar_IV, model = glm1_solar, type = "response", ext=extent(solar_IV))
+# writeRaster(solar.pg.sub, "./trend/data/pred_logReg_s_sub.tif", overwrite=TRUE)
+# plot(rast("./trend/data/pred_logReg_s_sub.tif"))
+# 
+# pred_logReg_s <- rast("./trend/data/pred_logReg_s_project.tif")
+# pred_logReg_s_inter <- rast("./trend/data/pred_logReg_s_queue.tif")
+# pred_logReg_s_sub <- rast("./trend/data/pred_logReg_s_sub.tif")
+# 
+# results <- list(pred_logReg_s, pred_logReg_s_sub, pred_logReg_s_inter)
+# 
+# new_results <- list()
+# for(i in 1:3){
+#   new_results[i] <- mask_solar(results[[i]], rast(solar_absence_roi))
+# }
+# 
+# writeRaster(rast(new_results), "./trend/data/trend_surface.tif", overwrite=TRUE)
 new_results <- rast("./trend/data/trend_surface.tif")
 
 
 
 # f4
-df_results <- new_results[[3]] - new_results[[1]] # queue - project
-# names(model_data)
-model_data <- rast(list(df_results, rast(solar_IV_new)))
-# model_data <- stack(list(raster(df_results), solar_IV))
-
-sample_size <- 100000
-valid_cells_mask <- rast(solar_absence_roi) == 1
-valid_cell_numbers <- cells(valid_cells_mask) # get index for true cells
-sampled_cell_numbers <- sample(valid_cell_numbers, size = sample_size) # sample the cells
-sample_coords <- xyFromCell(model_data, sampled_cell_numbers) # get the xy coordinates based on the cell IDs
-sampled_data <- extract(model_data, sample_coords) # extract values on the cell IDs
-# sampled_data <- spatSample(model_data, size = sample_size, method = "random",
-#                            na.rm = TRUE, as.df = TRUE)
-write.csv(sampled_data, "./trend/data/f4_project_sample.csv", row.names = FALSE)
+# df_results <- new_results[[3]] - new_results[[1]] # queue - project
+# # names(model_data)
+# model_data <- rast(list(df_results, rast(solar_IV_new)))
+# # model_data <- stack(list(raster(df_results), solar_IV))
+# 
+# sample_size <- 100000
+# valid_cells_mask <- rast(solar_absence_roi) == 1
+# valid_cell_numbers <- cells(valid_cells_mask) # get index for true cells
+# sampled_cell_numbers <- sample(valid_cell_numbers, size = sample_size) # sample the cells
+# sample_coords <- xyFromCell(model_data, sampled_cell_numbers) # get the xy coordinates based on the cell IDs
+# sampled_data <- extract(model_data, sample_coords) # extract values on the cell IDs
+# # sampled_data <- spatSample(model_data, size = sample_size, method = "random",
+# #                            na.rm = TRUE, as.df = TRUE)
+# write.csv(sampled_data, "./trend/data/f4_project_sample.csv", row.names = FALSE)
 sampled_data <- read_csv("./trend/data/f4_project_sample.csv")
+
 
 df_model <- sampled_data %>% 
   mutate(across(
-    .cols = setdiff(names(.), c("pred_logReg_s_queue")),
+    .cols = setdiff(names(.), c("pred_logReg_s_queue", names(.)[str_detect(names(.), "lulc|region")])),
     .fns = ~ scale(.) %>% as.numeric() # scale predictors before regression 
   ))
 
@@ -260,23 +261,23 @@ model_formula  <- as.formula(pred_logReg_s_queue ~ tx + landAcq + roads + slope 
 f3_glm <- lm(model_formula, data = df_model)
 
 
-df_results_sub <- new_results[[3]] - new_results[[2]] # queue - sub
-# names(model_data)
-model_data_sub <- rast(list(df_results_sub, rast(solar_IV_new)))
-# model_data <- stack(list(raster(df_results), solar_IV))
-
-sample_size <- 100000
-valid_cells_mask <- rast(solar_absence_roi) == 1
-valid_cell_numbers_sub <- cells(valid_cells_mask) # get index for true cells
-valid_cell_numbers_sub <- sample(valid_cell_numbers_sub, size = sample_size) # sample the cells
-sample_coords_sub <- xyFromCell(model_data_sub, valid_cell_numbers_sub) # get the xy coordinates based on the cell IDs
-sampled_data_sub <- extract(model_data_sub, sample_coords_sub) # extract values on the cell IDs
-write.csv(sampled_data_sub, "./trend/data/f4_sub_sample.csv", row.names = FALSE)
+# df_results_sub <- new_results[[3]] - new_results[[2]] # queue - sub
+# # names(model_data)
+# model_data_sub <- rast(list(df_results_sub, rast(solar_IV_new)))
+# # model_data <- stack(list(raster(df_results), solar_IV))
+# 
+# sample_size <- 100000
+# valid_cells_mask <- rast(solar_absence_roi) == 1
+# valid_cell_numbers_sub <- cells(valid_cells_mask) # get index for true cells
+# valid_cell_numbers_sub <- sample(valid_cell_numbers_sub, size = sample_size) # sample the cells
+# sample_coords_sub <- xyFromCell(model_data_sub, valid_cell_numbers_sub) # get the xy coordinates based on the cell IDs
+# sampled_data_sub <- extract(model_data_sub, sample_coords_sub) # extract values on the cell IDs
+# write.csv(sampled_data_sub, "./trend/data/f4_sub_sample.csv", row.names = FALSE)
 sampled_data_sub <- read_csv("./trend/data/f4_sub_sample.csv")
 
 df_model <- sampled_data_sub %>% 
   mutate(across(
-    .cols = setdiff(names(.), c("pred_logReg_s_queue")),
+    .cols = setdiff(names(.), c("pred_logReg_s_queue", names(.)[str_detect(names(.), "lulc|region")])),
     .fns = ~ scale(.) %>% as.numeric() # scale predictors before regression 
   ))
 
@@ -290,16 +291,16 @@ f3_glm_sub <- lm(model_formula, data = df_model)
 
 
 # f5
-predictor_data <- rast(solar_IV_new)
-sample_coords <- solar_queue %>%
-  st_coordinates()
-sampled_cap <- extract(predictor_data, sample_coords)
-write.csv(sampled_cap, "./trend/data/f5_capa_queue.csv", row.names = FALSE)
+# predictor_data <- rast(solar_IV_new)
+# sample_coords <- solar_queue %>%
+#   st_coordinates()
+# sampled_cap <- extract(predictor_data, sample_coords)
+# write.csv(sampled_cap, "./trend/data/f5_capa_queue.csv", row.names = FALSE)
 sampled_cap <- read_csv("./trend/data/f5_capa_queue.csv")
 
 df_cap <- sampled_cap %>% 
   mutate(across(
-    .cols = names(.),
+    .cols = setdiff(names(.), c(names(.)[str_detect(names(.), "lulc|region")])),
     .fns = ~ scale(.) %>% as.numeric() # scale predictors before regression 
   ))
 
@@ -321,33 +322,6 @@ model_formula  <- as.formula(capacity ~  pop + lowincome + minority + unemploy +
                                   + env + cf + lag|status))
 
 f4_glm2 <- lmer(model_formula, data = df_cap)
-
-
-# sample_coords <- solar_locations %>%
-#   st_centroid() %>% 
-#   st_coordinates() 
-# sampled_capacity <- extract(predictor_data, sample_coords)
-# write.csv(sampled_capacity, paste(file.path(analysis_path,"/f5_capa_project.csv"), sep=""), row.names = FALSE)
-# sampled_capacity <- read_csv(paste(file.path(analysis_path,"/f5_capa_project.csv"), sep=""))
-# df_cap <- sampled_capacity %>% 
-#   mutate(across(
-#     .cols = names(.),
-#     .fns = ~ scale(.) %>% as.numeric() # scale predictors before regression 
-#   ))
-# 
-# df_cap$capacity <- solar_locations$nameplate_capacity
-# 
-# model_formula  <- as.formula(capacity ~ tx + landAcq + roads + slope + pop + rps + hail + fire + community + svi_unemp + svi_minrty + svi_pov + 
-#                                lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
-#                                region_ne + region_mw + region_w + region_s + region_tex + region_mtw +
-#                                env + cf + lag)
-# 
-# glm1_cap <- lm(model_formula, data = df_cap)
-# 
-# f4b_s <- rst_plot(glm1_cap) +
-#   scale_y_continuous(
-#     labels = scales::label_number(accuracy = 1)             
-#   ) 
 
 
 save(rgn, solar_que, solar_queue, s, s_sub, solar_inter, s_dat_compare, s_d,

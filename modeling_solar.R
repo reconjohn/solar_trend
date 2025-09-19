@@ -76,7 +76,7 @@ s_dat <- solar.cov.bg %>%
   rbind(solar.cov.existing) %>% 
   # scale
   mutate(across(
-    .cols = setdiff(names(.), c("zone", "treat")),
+    .cols = setdiff(names(.), c("zone", "treat", names(.)[str_detect(names(.), "lulc|region")])),
     .fns = ~ scale(.) %>% as.numeric()
   )) %>%
   
@@ -182,7 +182,7 @@ solar.cov.bg.inter <- s.bg.inter %>%
     
     # scale
     mutate(across(
-      .cols = setdiff(names(.), c("zone", "treat")),
+      .cols = setdiff(names(.), c("zone", "treat", names(.)[str_detect(names(.), "lulc|region")])),
       .fns = ~ scale(.) %>% as.numeric()
     )) %>%
     
@@ -281,10 +281,10 @@ solar.cov.bg.sub <- s.bg.sub %>%
     dplyr::select(-group) %>% 
     rbind(solar.cov.existing.sub) %>% 
     
-    # mutate(across(
-    #   .cols = setdiff(names(.), c("zone", "treat")),
-    #   .fns = ~ scale(.) %>% as.numeric()
-    # )) %>%
+    mutate(across(
+      .cols = setdiff(names(.), c("zone", "treat", names(.)[str_detect(names(.), "lulc|region")])),
+      .fns = ~ scale(.) %>% as.numeric()
+    )) %>%
     
     mutate(treat = factor(treat)) %>% 
     na.omit()

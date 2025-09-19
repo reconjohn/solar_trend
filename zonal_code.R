@@ -1,43 +1,43 @@
-base_ras <- terra::rast("/home/energysiting/data/processed_data/masks/US_base_raster.tif")
-# existing vs. queue
-tp <- s_dat_compare %>% 
-  filter(class != "Substation") %>% 
-  dplyr::select(-zone)
-
-
-glm1 <- glm(treat ~ tx + landAcq + roads + slope + pop + hail + fire + community + lowincome + minority + unemploy +
-                    lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
-                    region +
-                    env + cf + lag + 
-              class*(tx + landAcq + roads + slope + pop + hail + fire + community + lowincome + minority + unemploy +
-              lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
-              region +
-              env + cf + lag), 
-                  data=tp, family = binomial(link="logit"))
-
-glm1 %>% summary()
-# closer TX, steeper slope, more people, avoiding hail, closer energy community,
-# strict to env, more cf, cluster
-# queue: closer TX, less people, high hail,
-# less NE, West, not strict to env, less cf, less cluster
+# base_ras <- terra::rast("/home/energysiting/data/processed_data/masks/US_base_raster.tif")
+# # existing vs. queue
+# tp <- s_dat_compare %>% 
+#   filter(class != "Substation") %>% 
+#   dplyr::select(-zone)
+# 
+# 
+# glm1 <- glm(treat ~ tx + landAcq + roads + slope + pop + hail + fire + community + lowincome + minority + unemploy +
+#                     lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
+#                     region +
+#                     env + cf + lag + 
+#               class*(tx + landAcq + roads + slope + pop + hail + fire + community + lowincome + minority + unemploy +
+#               lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
+#               region +
+#               env + cf + lag), 
+#                   data=tp, family = binomial(link="logit"))
+# 
+# glm1 %>% summary()
+# # closer TX, steeper slope, more people, avoiding hail, closer energy community,
+# # strict to env, more cf, cluster
+# # queue: closer TX, less people, high hail,
+# # less NE, West, not strict to env, less cf, less cluster
 
 
 ################################################################################
 # late vs. early 
 ### data cleaning
-queue_rast <- solar_queue %>% # queue project locations 
-  st_transform(crs = 5070) %>% # transform crs to ours
-  st_buffer(dist = 1600, # in km
-            endCapStyle = 'ROUND') %>% 
-
-  terra::vect() %>% # vectorize to rasterize
-  terra::rasterize(y = base_ras,
-                   field = "unique_id",
-                   touches = TRUE) %>% # any polygon that touches will be converted
-  terra::mask(base_ras)
-s_q_rast <- raster(queue_rast)
-s_q_zonal <- as.data.frame(zonal(x = solar_IV_new, z = s_q_rast, fun ='mean', na.rm = TRUE)) 
-write.csv(s_q_zonal, "./trend/data/s_q_zonal.csv", row.names = FALSE)
+# queue_rast <- solar_queue %>% # queue project locations 
+#   st_transform(crs = 5070) %>% # transform crs to ours
+#   st_buffer(dist = 1600, # in km
+#             endCapStyle = 'ROUND') %>% 
+# 
+#   terra::vect() %>% # vectorize to rasterize
+#   terra::rasterize(y = base_ras,
+#                    field = "unique_id",
+#                    touches = TRUE) %>% # any polygon that touches will be converted
+#   terra::mask(base_ras)
+# s_q_rast <- raster(queue_rast)
+# s_q_zonal <- as.data.frame(zonal(x = solar_IV_new, z = s_q_rast, fun ='mean', na.rm = TRUE)) 
+# write.csv(s_q_zonal, "./trend/data/s_q_zonal.csv", row.names = FALSE)
 s_q_zonal <- read_csv("./trend/data/s_q_zonal.csv")
 
 
@@ -62,7 +62,7 @@ df_filled <- df_filled %>%
 cap_dat <- df_filled %>% 
   dplyr::select(-unique_id,-state) %>% 
   mutate(across(
-    .cols = setdiff(names(.), c("capacity_mw", "status")),
+    .cols = setdiff(names(.), c("capacity_mw", "status", names(.)[str_detect(names(.), "lulc|region")])),
     .fns = ~ scale(.) %>% as.numeric() # scale predictors before regression 
   ))
 
