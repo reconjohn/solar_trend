@@ -62,7 +62,7 @@ The analysis is structured as a sequential pipeline. The scripts are intended to
 
 ## Repository Structure
 
-
+```
 .
 ├── syntax/
 │   ├── function.R
@@ -81,4 +81,6 @@ The analysis is structured as a sequential pipeline. The scripts are intended to
 │   └── ... (Input data files)
 │
 └── figures/
-└── ... (Output figures)
+    └── ... (Output figures)
+    
+```

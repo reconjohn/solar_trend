@@ -361,11 +361,8 @@ display: none;
 intended to be run in the following order to reproduce the analysis,
 from initial data processing to final figure generation.</p>
 <ol style="list-style-type: decimal">
-<li><strong>Setup &amp; Data Preparation</strong>
-(<code>function.R</code>, <code>prep.R</code>):
+<li><strong>Setup &amp; Data Preparation</strong>:
 <ul>
-<li>Loads all necessary libraries and custom functions.</li>
-<li>Generates the foundational datasets required for the analysis.</li>
 <li>Processes interconnection queue data to identify matched substations
 (<code>solar_que_sub.R</code>).</li>
 <li>Identifies the nearest substations for existing solar projects
@@ -381,11 +378,14 @@ from initial data processing to final figure generation.</p>
 incentives) into a single raster stack (<code>stack.R</code>).</li>
 <li>Performs zonal statistics to extract predictor values for all
 presence and pseudo-absence locations (<code>zonal.R</code>).</li>
+<li>Prepares dataset for modeling (<code>modeling_solar.R</code>).</li>
 </ul></li>
 <li><strong>Modeling &amp; Analysis</strong>:
 <ul>
-<li>Runs the core regression models to compare siting drivers for
-existing vs. queued projects (<code>modeling_solar.R</code>).</li>
+<li>Loads all necessary libraries and custom functions
+(<code>function.R</code>).</li>
+<li>Run models, and generates the foundational datasets required for the
+analysis (<code>prep.R</code>).</li>
 </ul></li>
 <li><strong>Visualization &amp; Output</strong>:
 <ul>
@@ -450,10 +450,6 @@ visual outputs for the Supplementary Information (SI) section.</li>
 <li><p><strong>Dependencies</strong>: The complete list of required R
 packages is located at the top of the
 <strong><code>function.R</code></strong> script.</p></li>
-<li><p><strong>Directory Structure</strong>: This project assumes a
-specific directory structure for scripts, data, and figures. Please
-create sub-folders for <code>data/</code>, <code>syntax/</code>, and
-<code>figures/</code> as needed.</p></li>
 <li><p><strong>Running the Analysis</strong>:</p>
 <ul>
 <li>Begin by running the <strong><code>prep.R</code></strong> script to
@@ -469,10 +465,26 @@ Workflow</strong> section.</li>
 </div>
 <div id="repository-structure" class="section level2">
 <h2>Repository Structure</h2>
-<p>. ├── syntax/ │ ├── function.R │ ├── prep.R │ ├── solar_que_sub.R │
-├── solar_sub.R │ ├── solar_inter.R │ ├── absence.R │ ├── stack.R │ ├──
-zonal.R │ ├── modeling_solar.R │ ├── code.R │ └── SI.R │ ├── data/ │ └──
-… (Input data files) │ └── figures/ └── … (Output figures)</p>
+<pre><code>.
+├── syntax/
+│   ├── function.R
+│   ├── prep.R
+│   ├── solar_que_sub.R
+│   ├── solar_sub.R
+│   ├── solar_inter.R
+│   ├── absence.R
+│   ├── stack.R
+│   ├── zonal.R
+│   ├── modeling_solar.R
+│   ├── code.R
+│   └── SI.R
+│
+├── data/
+│   └── ... (Input data files)
+│
+└── figures/
+    └── ... (Output figures)
+    </code></pre>
 </div>
 </div>
 
