@@ -1,4 +1,4 @@
-state_boundaries <- st_read(file.path(raw_data_path, 'us_state_outlines/tl_2018_us_state.shp')) %>% #read state boundaries
+state_boundaries <- st_read('/home/energysiting/data/raw_data/us_state_outlines/tl_2018_us_state.shp') %>% #read state boundaries
   st_transform(crs = 5070)
 projection <- (raster::crs("+init=epsg:5070"))
 # plot(state_boundaries$geometry)
@@ -6,12 +6,12 @@ projection <- (raster::crs("+init=epsg:5070"))
 # read in the data
 ## solar
 ### suitable areas
-solar_mask_rast <- terra::rast("./trend/data/solar_hull_existing_mask.tif")
+solar_mask_rast <- terra::rast("./data/solar_hull_existing_mask.tif")
 # plot(solar_mask_rast)
 solar_suit <- terra::rast("/home/energysiting/data/processed_data/masks/solar_suitability_SL1.tif")
 # plot(solar_suit)
 
-solar_location_csv <- read_csv(file = "./trend/data/solar_hull_existing.csv")
+solar_location_csv <- read_csv(file = "./data/solar_hull_existing.csv")
 
 # masking
 solar_absence_roi <- solar_suit %>% 
@@ -22,10 +22,10 @@ solar_absence_roi <- solar_suit %>%
 
 # save, suitable area after removing suitability criteria and existing solar project buffer areas
 writeRaster(x = solar_absence_roi,
-            filename = "./trend/data/solar_absence_roi.tif",
+            filename = "./data/solar_absence_roi.tif",
             overwrite = TRUE)
 
-solar_absence_roi <- raster("./trend/data/solar_absence_roi.tif")
+solar_absence_roi <- raster("./data/solar_absence_roi.tif")
 
 # Define the function
 randomPts <- function(raster_mask, folder, seeds, tech, location_csv){
@@ -89,14 +89,14 @@ s_ab_sf <- randomPts(raster_mask = solar_absence_roi,
                    seeds = c(1:10), tech = "solar", location_csv = solar_location_csv) # Can add more seeds to list to get more sampling iterations
 
 ### solar interconnection analysis
-solar_inter_csv <- read_csv(file = "./trend/data/solar_inter_existing.csv") %>% 
+solar_inter_csv <- read_csv(file = "./data/solar_inter_existing.csv") %>% 
   dplyr::rename(state_code = STATE)
 
 s_inter_ab_sf <- randomPts(raster_mask = solar_absence_roi,
                          seeds = c(1:10), tech = "solar", location_csv = solar_inter_csv)
 
 
-solar_sub_csv <- read_csv(file = "./trend/data/solar_sub_existing.csv") %>% 
+solar_sub_csv <- read_csv(file = "./data/solar_sub_existing.csv") %>% 
   dplyr::rename(state_code = STATE)
 
 s_sub_ab_sf <- randomPts(raster_mask = solar_absence_roi,
@@ -104,5 +104,5 @@ s_sub_ab_sf <- randomPts(raster_mask = solar_absence_roi,
 
 
 save(s_inter_ab_sf,s_sub_ab_sf,s_ab_sf, solar_absence_roi,
-     file = "./trend/data/absence_trend.RData")
-load("./trend/data/absence_trend.RData")
+     file = "./data/absence_trend.RData")
+load("./data/absence_trend.RData")

@@ -1,4 +1,4 @@
-source("./trend/trend_function.R")
+source("./syntax/function.R")
 processed_layer_path <- "/home/energysiting/data/processed_data/variables"
 
 
@@ -63,7 +63,7 @@ s1 <- rbind(
   guides(fill = guide_legend(byrow=T, nrow = 1))
 
 
-ggsave("./trend/fig/s1.png", s1, width = 12, height = 6)
+ggsave("./fig/s1.png", s1, width = 12, height = 6)
 
 
 
@@ -98,11 +98,11 @@ s2 <- solar_que %>% # filter for utility scale (>1MW)
         axis.title.x = element_text(color = "black",family="Franklin Gothic Book",size=12),
         plot.title=element_text(family="Franklin Gothic Demi", size=20))
 
-ggsave("./trend/fig/s2.png", s10, width = 12, height = 6)
+ggsave("./fig/s2.png", s10, width = 12, height = 6)
 
 
 
-png(filename = "./trend/fig/lulc.png", width = 12, height = 12, units = "in", res = 300)
+png(filename = "./fig/lulc.png", width = 12, height = 12, units = "in", res = 300)
 
 par(mfrow = c(2,1))
 
@@ -116,9 +116,9 @@ plot(rast(file.path(processed_layer_path, "lulc_new.tif")), main = "2023 Land Co
 dev.off()
 
 
-solar_stack <- stack("./trend/data/solar_covStack.tif")
-coeff_stack <- stack("./trend/data/covStack_old.tif")
-coeff_stack_new <- stack("./trend/data/covStack_new.tif")
+solar_stack <- stack("./data/solar_covStack.tif")
+coeff_stack <- stack("./data/covStack_old.tif")
+coeff_stack_new <- stack("./data/covStack_new.tif")
 
 
 cov.names <- c("Transmission dist",
@@ -152,7 +152,7 @@ cov.names <- c("Transmission dist",
                "Mtwest")
 
 
-png(filename = "./trend/fig/var_cov.png", width = 14, height = 8, units = "in", res = 300)
+png(filename = "./fig/var_cov.png", width = 14, height = 8, units = "in", res = 300)
 
 plot(stack(coeff_stack_new[[2:11]]), 
      axes = FALSE,           # Remove axes
@@ -164,7 +164,7 @@ plot(stack(coeff_stack_new[[2:11]]),
 dev.off()
 
 
-png(filename = "./trend/fig/tx.png", width = 14, height = 6, units = "in", res = 300)
+png(filename = "./fig/tx.png", width = 14, height = 6, units = "in", res = 300)
 
 plot(stack(list(coeff_stack[[1]],coeff_stack_new[[1]])), 
      axes = FALSE,           # Remove axes
@@ -189,7 +189,7 @@ rgn_plot <- rgn %>%
         panel.grid = element_blank())   
 
 
-png(filename = "./trend/fig/change_old.png", width = 14, height = 10, units = "in", res = 300)
+png(filename = "./fig/change_old.png", width = 14, height = 10, units = "in", res = 300)
 plot(coeff_stack[[12:19]],
      axes = FALSE,           # Remove axes
      box = FALSE,            # Remove the outline borders
@@ -201,7 +201,7 @@ plot(coeff_stack[[12:19]],
 dev.off()
 
 
-png(filename = "./trend/fig/change_new.png", width = 14, height = 10, units = "in", res = 300)
+png(filename = "./fig/change_new.png", width = 14, height = 10, units = "in", res = 300)
 plot(coeff_stack_new[[12:19]],
      axes = FALSE,           # Remove axes
      box = FALSE,            # Remove the outline borders
@@ -212,7 +212,7 @@ plot(coeff_stack_new[[12:19]],
 )
 dev.off()
 
-png(filename = "./trend/fig/solar.png", width = 14, height = 4, units = "in", res = 300)
+png(filename = "./fig/solar.png", width = 14, height = 4, units = "in", res = 300)
 plot(stack(list(solar_stack)), 
      axes = FALSE,           # Remove axes
      box = FALSE,            # Remove the outline borders
@@ -368,7 +368,7 @@ s8 <- ggarrange(
   font.label = list(size = 14, face = "bold")
 )
 
-ggsave("./trend/fig/s8.png", s8, width = 12, height = 12)
+ggsave("./fig/s8.png", s8, width = 12, height = 12)
 
 
 
@@ -417,7 +417,7 @@ s9 <- solar_que %>% # filter for utility scale (>1MW)
         axis.title.x = element_text(color = "black",family="Franklin Gothic Book",size=12),
         plot.title=element_text(family="Franklin Gothic Demi", size=20, hjust = 0.5))
 
-ggsave("./trend/fig/s9.png", s9, width = 12, height = 10)
+ggsave("./fig/s9.png", s9, width = 12, height = 10)
 
 
 
@@ -499,4 +499,4 @@ s10 <- ggarrange(s10a, s10b,
   # hjust = -1,
   font.label = list(size = 14, face = "bold"))
 
-ggsave("./trend/fig/s10.png", s10, width = 12, height = 12)
+ggsave("./fig/s10.png", s10, width = 12, height = 12)

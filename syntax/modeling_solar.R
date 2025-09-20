@@ -1,6 +1,6 @@
 
 #### solar
-solar.cov.existing <- read_csv("./trend/data/existing_cov_solar.csv") 
+solar.cov.existing <- read_csv("./data/existing_cov_solar.csv") 
 # solar.cov.existing[, 13:20] <- t(apply(solar.cov.existing[, 13:20], 1, function(row) {
 #   max_idx <- which(row == max(row))        # Find indices of maximum values
 #   if(length(max_idx) > 1){
@@ -13,7 +13,7 @@ solar.cov.existing <- read_csv("./trend/data/existing_cov_solar.csv")
 # solar.cov.existing[, 14:21] %>% rowSums() %>% sum()
 # solar.cov.existing[, 22:27] %>% rowSums() %>% sum(., na.rm = T)
 
-s.bg <- read_csv("./trend/data/bg_cov_solar.csv") 
+s.bg <- read_csv("./data/bg_cov_solar.csv") 
 # w.bg[, 13:20] <- t(apply(w.bg[, 13:20], 1, function(row) {
 #   max_idx <- which(row == max(row))        # Find indices of maximum values
 #   if(length(max_idx) > 1){
@@ -136,7 +136,7 @@ s_reg <- rst_ordered %>%
 
 
 #### solar interconnection
-solar.cov.existing.inter <- read_csv("./trend/data/existing_cov_solar_inter.csv")
+solar.cov.existing.inter <- read_csv("./data/existing_cov_solar_inter.csv")
 #   mutate(lulc_sparse = ifelse(lulc_sparse > 0.4, 1, 0))
 # 
 # solar.cov.existing.inter[, 13:20] <- t(apply(solar.cov.existing.inter[, 13:20], 1, function(row) {
@@ -151,7 +151,7 @@ solar.cov.existing.inter <- read_csv("./trend/data/existing_cov_solar_inter.csv"
 # solar.cov.existing.inter[, 15:22] %>% rowSums() %>% sum()
 # solar.cov.existing.inter[, 23:28] %>% rowSums() %>% sum(., na.rm = T)
 
-s.bg.inter <- read_csv("./trend/data/bg_cov_solar_inter.csv")
+s.bg.inter <- read_csv("./data/bg_cov_solar_inter.csv")
 #   filter(!is.na(fire))
 # w.bg.inter[, 13:20] <- t(apply(w.bg.inter[, 13:20], 1, function(row) {
 #   max_idx <- which(row == max(row))        # Find indices of maximum values
@@ -241,7 +241,7 @@ s_reg_inter <- rst_ordered_inter %>%
 
 
 ### solar sub
-solar.cov.existing.sub <- read_csv("./trend/data/existing_cov_solar_sub.csv")
+solar.cov.existing.sub <- read_csv("./data/existing_cov_solar_sub.csv")
 # solar.cov.existing.sub[, 13:20] <- t(apply(solar.cov.existing.sub[, 13:20], 1, function(row) {
 #   max_idx <- which(row == max(row))        # Find indices of maximum values
 #   if(length(max_idx) > 1){
@@ -254,7 +254,7 @@ solar.cov.existing.sub <- read_csv("./trend/data/existing_cov_solar_sub.csv")
 # solar.cov.existing.sub[, 15:22] %>% rowSums() %>% sum()
 # solar.cov.existing.sub[, 23:28] %>% rowSums() %>% sum(., na.rm = T)
 
-s.bg.sub <- read_csv("./trend/data/bg_cov_solar_sub.csv")
+s.bg.sub <- read_csv("./data/bg_cov_solar_sub.csv")
 # w.bg.sub[, 13:20] <- t(apply(w.bg.sub[, 13:20], 1, function(row) {
 #   max_idx <- which(row == max(row))        # Find indices of maximum values
 #   if(length(max_idx) > 1){
@@ -343,5 +343,5 @@ s_reg_sub <- rst_ordered_sub %>%
 save(solar.cov.bg.inter, solar.cov.existing.inter, 
      solar.cov.bg.sub, solar.cov.existing.sub, 
      solar.cov.bg, solar.cov.existing,
-     file = "./trend/data/model_data.RData")
-load("./trend/data/model_data.RData")
+     file = "./data/model_data.RData")
+load("./data/model_data.RData")

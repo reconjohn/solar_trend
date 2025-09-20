@@ -11,8 +11,8 @@ library(ggnewscale)
 ggsave <- function(..., bg = 'white') ggplot2::ggsave(..., bg = bg)
 
 # data
-new_results <- rast("./trend/data/trend_surface.tif") # prob surfaces
-load("./trend/data/trend_data.RData") 
+new_results <- rast("./data/trend_surface.tif") # prob surfaces
+load("./data/trend_data.RData") 
 # rgn, solar_que, solar_queue, s, s_sub, solar_inter, s_dat_compare, s_d,
 # sampled_data, sampled_data_sub,sampled_cap,
 # f3_glm,f3_glm_sub,f4_glm1,f4_glm2,

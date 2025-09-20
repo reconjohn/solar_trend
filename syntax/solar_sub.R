@@ -1,5 +1,5 @@
 # current PV
-solar <- st_read("./siting/uspvdb_v2_0_20240801.geojson") %>% 
+solar <- st_read("../data/raw_data/uspvdb_v2_0_20240801.geojson") %>% 
   dplyr::select(unique_id = FID,  # select id column
                 operating_year = p_year, # select install date
                 state_code = p_state, # select US-state
@@ -13,7 +13,7 @@ solar <- st_read("./siting/uspvdb_v2_0_20240801.geojson") %>%
 
 
 # substation
-hif <- read_csv("./siting/substation_tract_0.csv") %>% 
+hif <- read_csv("../data/raw_data/substation_tract_0.csv") %>% 
   filter(TYPE == "SUBSTATION") %>% 
   filter(STATUS == "IN SERVICE") %>% 
   filter(!STATE_ABBR %in% c("HI","AK")) %>% 
@@ -32,7 +32,7 @@ solar_sub <- hif[tt,] %>%  # identify nearest substations
   distinct()
 
 
-write_csv(solar_sub, path = "./trend/data/solar_sub.csv",
+write_csv(solar_sub, path = "./data/solar_sub.csv",
           append = FALSE)
 
 

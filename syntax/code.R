@@ -1,4 +1,4 @@
-source("./trend/trend_function.R")
+source("./syntax/function.R")
 
 ### figures
 s_com$highlight <- "Sites"
@@ -403,7 +403,7 @@ f0 <- ggarrange(
   font.label = list(size = 14, face = "bold")
 )
 
-ggsave("./trend/fig/f0.png", f0, width = 12, height = 8)
+ggsave("./fig/f0.png", f0, width = 12, height = 8)
 
 
 
@@ -462,7 +462,7 @@ f1 <- s_dat_compare %>%
         axis.title.x = element_text(color = "black",family="Franklin Gothic Book",size=12),
         plot.title=element_text(family="Franklin Gothic Demi", size=16, hjust = -0.09, face = "bold"))
 
-ggsave("./trend/fig/f1.png", f1, width = 12, height = 8)
+ggsave("./fig/f1.png", f1, width = 12, height = 8)
 
 
 
@@ -491,7 +491,7 @@ f2 <- ggarrange(s_m, s_plot, widths = c(3,1.7), nrow = 1,
                 # hjust = -1,
                 font.label = list(size = 14, face = "bold"))
 
-ggsave("./trend/fig/f2.png", f2, width = 12, height = 10)
+ggsave("./fig/f2.png", f2, width = 12, height = 10)
 
 
 
@@ -551,7 +551,7 @@ f3 <- ggarrange(
   # hjust = -1,
   font.label = list(size = 14, face = "bold"))
 
-ggsave("./trend/fig/f3.png", f3, width = 12, height = 10)
+ggsave("./fig/f3.png", f3, width = 12, height = 10)
 
 
 ### capacity 
@@ -669,7 +669,7 @@ f4 <- ggarrange(
   
 )
 
-ggsave("./trend/fig/f4.png", f4, width = 12, height = 12)
+ggsave("./fig/f4.png", f4, width = 12, height = 12)
 
 
 

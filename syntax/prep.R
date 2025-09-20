@@ -1,7 +1,7 @@
-load("./siting/data/region.RData") # rgn 
-load("./trend/data/location_solar.RData") # solar_locations,solar_inter,solar_sub,
-load("./trend/data/absence_trend.RData")
-load("./trend/data/model_data.RData")
+load("../data/derived/region.RData") # rgn 
+load("./data/location_solar.RData") # solar_locations,solar_inter,solar_sub,
+load("./data/absence_trend.RData")
+load("./data/model_data.RData")
 # solar.cov.bg.inter, solar.cov.existing.inter, 
 # solar.cov.bg.sub, solar.cov.existing.sub, 
 # solar.cov.bg, solar.cov.existing, 
@@ -21,7 +21,7 @@ rgn <- rgn[c(6,2,1,5,4,3),]
 
 
 # queue projects
-solar_que <- read_csv("./trend1/data/final_output_word_match.csv") %>% # read in the file
+solar_que <- read_csv("../trend1/data/final_output_word_match.csv") %>% # read in the file
   filter(str_detect(lbnl_type,"Solar")&
            status == "active"&
            capacity_mw > 1)
@@ -139,12 +139,12 @@ s_d <- RE("Operational") %>%
          variable = factor(variable, levels = c("Capacity factor","Hail","Wildfire","Energy community"))) %>%
   mutate(class = factor(class, levels = c("Operational","Queue")),
          region = factor(region, levels = rev(c("West","Mtwest","Midwest","Texas","South","Northeast"))))
-write.csv(s_d, "./trend/data/trend_compare.csv", row.names = FALSE)
-# s_d <- read_csv("./trend/data/trend_compare.csv")
+write.csv(s_d, "./data_compare.csv", row.names = FALSE)
+# s_d <- read_csv("./data_compare.csv")
 
 # f3
 # ## prediction
-solar_absence_roi <- raster("./trend/data/solar_absence_roi.tif")
+solar_absence_roi <- raster("./data/solar_absence_roi.tif")
 mask_solar <- function(rast_file, solar_absence_roi){
   rast_file %>%
     terra::mask(mask = solar_absence_roi)
@@ -169,8 +169,8 @@ mask_solar <- function(rast_file, solar_absence_roi){
 # solar.pg.project <- predict(object = solar_IV, model = glm1_solar, type = "response", ext=extent(solar_IV))
 # # plot(solar.pg.project)
 # # plot(aoi_vect, add=TRUE)
-# writeRaster(solar.pg.project, "./trend/data/pred_logReg_s_project.tif", overwrite=TRUE)
-# plot(rast("./trend/data/pred_logReg_s_project.tif"))
+# writeRaster(solar.pg.project, "./data/pred_logReg_s_project.tif", overwrite=TRUE)
+# plot(rast("./data/pred_logReg_s_project.tif"))
 # 
 # ### queue prediction
 # s_dat_inter <- solar.cov.bg.inter %>%
@@ -191,8 +191,8 @@ mask_solar <- function(rast_file, solar_absence_roi){
 # solar.pg.inter <- predict(object = solar_IV_new, model = glm1_solar, type = "response", ext=extent(solar_IV_new))
 # # plot(solar.pg.inter)
 # # plot(aoi_vect, add=TRUE)
-# writeRaster(solar.pg.inter, "./trend/data/pred_logReg_s_queue.tif", overwrite=TRUE)
-# plot(rast("./trend/data/pred_logReg_s_queue.tif"))
+# writeRaster(solar.pg.inter, "./data/pred_logReg_s_queue.tif", overwrite=TRUE)
+# plot(rast("./data/pred_logReg_s_queue.tif"))
 # 
 # ### project substation prediction
 # s_dat_sub <- solar.cov.bg.sub %>%
@@ -211,12 +211,12 @@ mask_solar <- function(rast_file, solar_absence_roi){
 # # summary(glm1_solar)
 # 
 # solar.pg.sub <- predict(object = solar_IV, model = glm1_solar, type = "response", ext=extent(solar_IV))
-# writeRaster(solar.pg.sub, "./trend/data/pred_logReg_s_sub.tif", overwrite=TRUE)
-# plot(rast("./trend/data/pred_logReg_s_sub.tif"))
+# writeRaster(solar.pg.sub, "./data/pred_logReg_s_sub.tif", overwrite=TRUE)
+# plot(rast("./data/pred_logReg_s_sub.tif"))
 # 
-# pred_logReg_s <- rast("./trend/data/pred_logReg_s_project.tif")
-# pred_logReg_s_inter <- rast("./trend/data/pred_logReg_s_queue.tif")
-# pred_logReg_s_sub <- rast("./trend/data/pred_logReg_s_sub.tif")
+# pred_logReg_s <- rast("./data/pred_logReg_s_project.tif")
+# pred_logReg_s_inter <- rast("./data/pred_logReg_s_queue.tif")
+# pred_logReg_s_sub <- rast("./data/pred_logReg_s_sub.tif")
 # 
 # results <- list(pred_logReg_s, pred_logReg_s_sub, pred_logReg_s_inter)
 # 
@@ -225,8 +225,8 @@ mask_solar <- function(rast_file, solar_absence_roi){
 #   new_results[i] <- mask_solar(results[[i]], rast(solar_absence_roi))
 # }
 # 
-# writeRaster(rast(new_results), "./trend/data/trend_surface.tif", overwrite=TRUE)
-new_results <- rast("./trend/data/trend_surface.tif")
+# writeRaster(rast(new_results), "./data/trend_surface.tif", overwrite=TRUE)
+new_results <- rast("./data/trend_surface.tif")
 
 
 
@@ -244,8 +244,8 @@ new_results <- rast("./trend/data/trend_surface.tif")
 # sampled_data <- extract(model_data, sample_coords) # extract values on the cell IDs
 # # sampled_data <- spatSample(model_data, size = sample_size, method = "random",
 # #                            na.rm = TRUE, as.df = TRUE)
-# write.csv(sampled_data, "./trend/data/f4_project_sample.csv", row.names = FALSE)
-sampled_data <- read_csv("./trend/data/f4_project_sample.csv")
+# write.csv(sampled_data, "./data/f4_project_sample.csv", row.names = FALSE)
+sampled_data <- read_csv("./data/f4_project_sample.csv")
 
 
 df_model <- sampled_data %>% 
@@ -273,8 +273,8 @@ f3_glm <- lm(model_formula, data = df_model)
 # valid_cell_numbers_sub <- sample(valid_cell_numbers_sub, size = sample_size) # sample the cells
 # sample_coords_sub <- xyFromCell(model_data_sub, valid_cell_numbers_sub) # get the xy coordinates based on the cell IDs
 # sampled_data_sub <- extract(model_data_sub, sample_coords_sub) # extract values on the cell IDs
-# write.csv(sampled_data_sub, "./trend/data/f4_sub_sample.csv", row.names = FALSE)
-sampled_data_sub <- read_csv("./trend/data/f4_sub_sample.csv")
+# write.csv(sampled_data_sub, "./data/f4_sub_sample.csv", row.names = FALSE)
+sampled_data_sub <- read_csv("./data/f4_sub_sample.csv")
 
 df_model <- sampled_data_sub %>% 
   mutate(across(
@@ -305,8 +305,8 @@ f3_glm_sub <- lm(model_formula, data = df_model)
 #   terra::mask(base_ras)
 # s_q_rast <- raster(queue_rast)
 # s_q_zonal <- as.data.frame(zonal(x = solar_IV_new, z = s_q_rast, fun ='mean', na.rm = TRUE)) 
-# write.csv(s_q_zonal, "./trend/data/s_q_zonal.csv", row.names = FALSE)
-s_q_zonal <- read_csv("./trend/data/s_q_zonal.csv")
+# write.csv(s_q_zonal, "./data/s_q_zonal.csv", row.names = FALSE)
+s_q_zonal <- read_csv("./data/s_q_zonal.csv")
 
 
 df <- solar_queue %>% 
@@ -364,8 +364,8 @@ f4_glm4 <- lmer(model_formula, data = cap_dat_r)
 # sample_coords <- solar_queue %>%
 #   st_coordinates()
 # sampled_cap <- extract(predictor_data, sample_coords)
-# write.csv(sampled_cap, "./trend/data/f5_capa_queue.csv", row.names = FALSE)
-sampled_cap <- read_csv("./trend/data/f5_capa_queue.csv")
+# write.csv(sampled_cap, "./data/f5_capa_queue.csv", row.names = FALSE)
+sampled_cap <- read_csv("./data/f5_capa_queue.csv")
 
 df_cap <- sampled_cap %>% 
   mutate(across(
@@ -396,4 +396,4 @@ f4_glm2 <- lmer(model_formula, data = df_cap)
 save(rgn, solar_que, solar_queue, s, s_sub, solar_inter, s_dat_compare, s_d,
      sampled_data, sampled_data_sub,sampled_cap,
      f3_glm,f3_glm_sub,f4_glm1,f4_glm2,f4_glm3,f4_glm4,
-     file = "./trend/data/trend_data.RData")
+     file = "./data/trend_data.RData")

@@ -1,8 +1,8 @@
 base_ras <- terra::rast("/home/energysiting/data/processed_data/masks/US_base_raster.tif")
 
 # read in new data from the USGS database
-solar_location_path <- './siting/uspvdb_v2_0_20240801.geojson'
-sub_location_path <- "./trend/data/solar_sub.csv" # substations nearest solar project
+solar_location_path <- '../data/raw_data/uspvdb_v2_0_20240801.geojson'
+sub_location_path <- "./data/solar_sub.csv" # substations nearest solar project
 
 
 solar_mask <- st_read(solar_location_path) %>% # read in the file
@@ -26,7 +26,7 @@ solar_locations <- st_read(solar_location_path) %>% # read in the file
            as.numeric()) 
 
 # queue substations 
-solar_inter <- read_csv("./trend/data/solar_inter.csv") %>% # read in the file
+solar_inter <- read_csv("./data/solar_inter.csv") %>% # read in the file
   mutate(unique_id = row_number()) %>%
   st_as_sf(coords = c("X", "Y"), crs = 4269) %>%
   st_transform(crs = 5070) %>% # transform crs to ours
@@ -83,15 +83,15 @@ solar_sub_rast <- solar_sub %>%
 
 # save
 writeRaster(x = solar_mask_rast,
-            filename = "./trend/data/solar_hull_existing_mask.tif",
+            filename = "./data/solar_hull_existing_mask.tif",
             overwrite = TRUE)
 
 writeRaster(x = solar_location_rast,
-            filename = "./trend/data/solar_hull_existing.tif",
+            filename = "./data/solar_hull_existing.tif",
             overwrite = TRUE)
 
 
-write_csv(solar_locations, path = "./trend/data/solar_hull_existing.csv",
+write_csv(solar_locations, path = "./data/solar_hull_existing.csv",
           append = FALSE)
 
 # # append = FALSE allows this command to overwrite previous results
@@ -102,12 +102,12 @@ write_csv(solar_locations, path = "./trend/data/solar_hull_existing.csv",
 
 ### inter
 writeRaster(x = solar_inter_rast,
-            filename = "./trend/data/solar_inter_existing.tif",
+            filename = "./data/solar_inter_existing.tif",
             overwrite = TRUE)
 
 # plot(rast("./trend/data/solar_inter_existing.tif"))
 
-write_csv(solar_inter, path = "./trend/data/solar_inter_existing.csv",
+write_csv(solar_inter, path = "./data/solar_inter_existing.csv",
           append = FALSE)
 # 
 # # append = FALSE allows this command to overwrite previous results
@@ -119,10 +119,10 @@ write_csv(solar_inter, path = "./trend/data/solar_inter_existing.csv",
 
 ### sub
 writeRaster(x = solar_sub_rast,
-            filename = "./trend/data/solar_sub_existing.tif",
+            filename = "./data/solar_sub_existing.tif",
             overwrite = TRUE)
 
-write_csv(solar_sub, path = "./trend/data/solar_sub_existing.csv",
+write_csv(solar_sub, path = "./data/solar_sub_existing.csv",
           append = FALSE)
 # 
 # # append = FALSE allows this command to overwrite previous results
@@ -133,6 +133,6 @@ write_csv(solar_sub, path = "./trend/data/solar_sub_existing.csv",
 
 
 save(solar_locations,solar_inter,solar_sub,
-     file = "./trend/data/location_solar.RData")
+     file = "./data/location_solar.RData")
 
 

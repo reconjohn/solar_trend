@@ -1,4 +1,4 @@
-all_matches <- read_csv("./trend1/data/final_output_word_match.csv")
+all_matches <- read_csv("../trend1/data/final_output_word_match.csv")
 
 solar <- all_matches %>% 
   filter(str_detect(lbnl_type,"Solar")&
@@ -9,7 +9,7 @@ solar <- all_matches %>%
 
 # mapview(solar)
 
-sub_data <- read_csv("./siting/substation_tract_0.csv", show_col_types = FALSE) %>% 
+sub_data <- read_csv("../data/raw_data/substation_tract_0.csv", show_col_types = FALSE) %>% 
   mutate(X = LONGITUDE,
          Y = LATITUDE) %>% 
   st_as_sf(coords = c("LONGITUDE", "LATITUDE"), crs = 4269) %>% 
@@ -28,7 +28,7 @@ queue_sub <- queue_sub %>%
 # mapview(queue_sub)
 
 write_csv(queue_sub %>% 
-            st_drop_geometry(), path = "./trend/data/solar_inter.csv",
+            st_drop_geometry(), path = "./data/solar_inter.csv",
           append = FALSE)
 
 

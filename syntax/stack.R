@@ -20,7 +20,7 @@ for (i in 1:length(cov.names)) {
 
 # Create a raster stack from the list of coefficient rasters
 solar_stack <- stack(raster_list)
-raster::writeRaster(solar_stack, "./trend/data/solar_covStack.tif", 
+raster::writeRaster(solar_stack, "./data/solar_covStack.tif", 
                     overwrite=TRUE)
 
 
@@ -99,7 +99,7 @@ for (i in 1:length(cov.names)) {
 
 # Create a raster stack from the list of coefficient rasters
 coeff_stack <- stack(raster_list)
-raster::writeRaster(coeff_stack, "./trend/data/covStack_old.tif", 
+raster::writeRaster(coeff_stack, "./data/covStack_old.tif", 
                     overwrite=TRUE)
 
 ### predictors new
@@ -148,5 +148,5 @@ for (i in 1:length(cov.names)) {
 
 
 coeff_stack_new <- stack(raster_list)
-raster::writeRaster(coeff_stack_new, "./trend/data/covStack_new.tif", 
+raster::writeRaster(coeff_stack_new, "./data/covStack_new.tif", 
                     overwrite=TRUE)
