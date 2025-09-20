@@ -43,7 +43,7 @@ s <- solar_locations %>%
   dplyr::rename(state = state_code,
                 capacity = p_cap_ac) %>% 
   dplyr::select(state, capacity) %>% 
-  mutate(class = "Project")
+  mutate(class = "Operational")
 
 s_sub <- solar_sub %>% 
   st_buffer(7000) %>% 
@@ -66,7 +66,7 @@ s_dat_compare <- solar.cov.bg.inter %>%
     solar.cov.bg %>% 
       dplyr::select(-group) %>% 
       rbind(solar.cov.existing) %>% 
-      mutate(class = "Project")
+      mutate(class = "Operational")
   ) 
 
 s_dat_compare <- s_dat_compare %>% 
@@ -125,8 +125,8 @@ RE <- function(tech){
 }
 
 
-s_d <- RE("Project") %>%
-  mutate(class = "Project") %>%
+s_d <- RE("Operational") %>%
+  mutate(class = "Operational") %>%
   rbind(
     RE("Queue") %>%
       mutate(class = "Queue")
@@ -137,9 +137,10 @@ s_d <- RE("Project") %>%
                            "fire" = "Wildfire",
                            "community" = "Energy community"),
          variable = factor(variable, levels = c("Capacity factor","Hail","Wildfire","Energy community"))) %>%
-  mutate(class = factor(class, levels = c("Project","Queue")),
+  mutate(class = factor(class, levels = c("Operational","Queue")),
          region = factor(region, levels = rev(c("West","Mtwest","Midwest","Texas","South","Northeast"))))
 write.csv(s_d, "./trend/data/trend_compare.csv", row.names = FALSE)
+# s_d <- read_csv("./trend/data/trend_compare.csv")
 
 # f3
 # ## prediction
@@ -291,6 +292,74 @@ f3_glm_sub <- lm(model_formula, data = df_model)
 
 
 # f5
+### data cleaning
+# queue_rast <- solar_queue %>% # queue project locations 
+#   st_transform(crs = 5070) %>% # transform crs to ours
+#   st_buffer(dist = 1600, # in km
+#             endCapStyle = 'ROUND') %>% 
+# 
+#   terra::vect() %>% # vectorize to rasterize
+#   terra::rasterize(y = base_ras,
+#                    field = "unique_id",
+#                    touches = TRUE) %>% # any polygon that touches will be converted
+#   terra::mask(base_ras)
+# s_q_rast <- raster(queue_rast)
+# s_q_zonal <- as.data.frame(zonal(x = solar_IV_new, z = s_q_rast, fun ='mean', na.rm = TRUE)) 
+# write.csv(s_q_zonal, "./trend/data/s_q_zonal.csv", row.names = FALSE)
+s_q_zonal <- read_csv("./trend/data/s_q_zonal.csv")
+
+
+df <- solar_queue %>% 
+  left_join(s_q_zonal, by = c("unique_id" = "zone"))
+
+complete_rows <- df %>%
+  filter(!is.na(tx))  # or use a more comprehensive NA check if needed
+
+df_filled <- st_join(df, complete_rows, join = st_equals, suffix = c("", "_filled"))
+
+df_filled <- df_filled %>%
+  mutate(across(
+    tx:lag,  # replace with actual columns needing fill
+    ~coalesce(.x, get(paste0(cur_column(), "_filled")))
+  )) %>%
+  select(-ends_with("_filled")) %>% 
+  st_drop_geometry()
+
+
+### phase specific data scaled based on 5km buffer and capacities 
+cap_dat <- df_filled %>% 
+  dplyr::select(-unique_id,-state) %>% 
+  mutate(across(
+    .cols = setdiff(names(.), c("capacity_mw", "status", names(.)[str_detect(names(.), "lulc|region")])),
+    .fns = ~ scale(.) %>% as.numeric() # scale predictors before regression 
+  ))
+
+
+cap_dat_r <- cap_dat %>%
+  mutate(region = names(cap_dat[22:27])[max.col(cap_dat[22:27])]) %>% # revert one-hot incode
+  dplyr::select(-region_ne:-region_mtw)
+
+
+### capacity modeling 
+model_formula  <- as.formula(capacity_mw ~ tx + landAcq + roads + slope + pop + hail + fire + community + lowincome + minority + unemploy + 
+                               lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
+                               region +
+                               env + cf + lag)
+
+f4_glm3 <- lm(model_formula, data = cap_dat_r)
+
+
+### capacity modeling by phase
+model_formula  <- as.formula(capacity_mw ~  pop + lowincome + minority + unemploy +  
+                               lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
+                               region +
+                               (tx + landAcq + roads + slope + hail + fire + community + 
+                                  + env + cf + lag|status))
+
+f4_glm4 <- lmer(model_formula, data = cap_dat_r)
+
+
+### SI
 # predictor_data <- rast(solar_IV_new)
 # sample_coords <- solar_queue %>%
 #   st_coordinates()
@@ -326,5 +395,5 @@ f4_glm2 <- lmer(model_formula, data = df_cap)
 
 save(rgn, solar_que, solar_queue, s, s_sub, solar_inter, s_dat_compare, s_d,
      sampled_data, sampled_data_sub,sampled_cap,
-     f3_glm,f3_glm_sub,f4_glm1,f4_glm2,
+     f3_glm,f3_glm_sub,f4_glm1,f4_glm2,f4_glm3,f4_glm4,
      file = "./trend/data/trend_data.RData")

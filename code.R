@@ -72,15 +72,15 @@ f0b1 <- solar_que %>%
       group_by(region) %>% 
       summarise(Count = n()) %>% 
       ungroup() %>% 
-      mutate(class = "Project")
+      mutate(class = "Operational")
   ) %>% 
   pivot_wider(names_from = class, values_from = Count) %>% 
-  mutate(Difference = Queue - Project) %>% 
+  mutate(Difference = Queue - Operational) %>% 
   gather(class, Count, Queue:Difference) %>% 
   
   mutate(region = factor(region, levels = c("West","Mtwest","Midwest","Texas","South","Northeast")),
          region_fill = factor(region, levels = rev(c("West","Mtwest","Midwest","Texas","South","Northeast")))) %>% 
-  mutate(class = factor(class, levels = c("Project","Queue","Difference"))) %>% 
+  mutate(class = factor(class, levels = c("Operational","Queue","Difference"))) %>% 
   
   ggplot() +
   geom_col(aes(x = Count, y = region_fill, fill = region)) +
@@ -232,15 +232,15 @@ f0c1 <- solar_que %>%
       group_by(region) %>% 
       summarise(Capacity = sum(capacity, na.rm = T)/n()) %>% 
       ungroup() %>% 
-      mutate(class = "Project")
+      mutate(class = "Operational")
   ) %>% 
   pivot_wider(names_from = class, values_from = Capacity) %>% 
-  mutate(Difference = Queue - Project) %>% 
+  mutate(Difference = Queue - Operational) %>% 
   gather(class, Capacity, Queue:Difference) %>% 
   
   mutate(region = factor(region, levels = c("West","Mtwest","Midwest","Texas","South","Northeast")),
          region_fill = factor(region, levels = rev(c("West","Mtwest","Midwest","Texas","South","Northeast")))) %>% 
-  mutate(class = factor(class, levels = c("Project","Queue","Difference"))) %>% 
+  mutate(class = factor(class, levels = c("Operational","Queue","Difference"))) %>% 
   
   ggplot() +
   geom_col(aes(x = Capacity, y = region_fill, fill = region)) +
@@ -408,16 +408,16 @@ ggsave("./trend/fig/f0.png", f0, width = 12, height = 8)
 
 
 f1 <- s_dat_compare %>% 
-  rst("Project") %>% 
+  rst("Operational") %>% 
   rbind(
     s_dat_compare %>% 
       rst("Substation"),
     s_dat_compare %>% 
       rst("Queue")
   ) %>% 
-  mutate(class = factor(class, levels = c("Project","Substation","Queue"))) %>% 
+  mutate(class = factor(class, levels = c("Operational","Substation","Queue"))) %>% 
   mutate(vari = rep(v_name, 3),
-         vari = fct_reorder(vari, exp(pe))) %>% 
+         vari = fct_reorder(vari, pe)) %>% 
   filter(!var == "(Intercept)") %>%
   mutate(domain = case_when(str_detect(var, "tx|roads|landAcq|cf|slope") ~ "Technical",
                             str_detect(var, "env|hail|fire") ~ "Environmental risk",
@@ -429,9 +429,9 @@ f1 <- s_dat_compare %>%
                                             "Social","Land use", "Regional"))) %>% 
   
   dplyr::rename(sig = color) %>% 
-  ggplot(aes(x = exp(pe), y = vari, color = class)) +
-  geom_vline(xintercept = 1,linetype = "dashed", size = 0.5, color = "gray30") +
-  geom_errorbar(aes(xmin=exp(pe-1.96*se), xmax=exp(pe+1.96*se), color = class), width = 0.3, size = 0.7,
+  ggplot(aes(x = pe, y = vari, color = class)) +
+  geom_vline(xintercept = 0,linetype = "dashed", size = 0.5, color = "gray30") +
+  geom_errorbar(aes(xmin=pe-1.96*se, xmax=pe+1.96*se, color = class), width = 0.3, size = 0.7,
                 position = position_dodge(width = 0.4)) +
   geom_point(aes(fill = class),size = 2,pch=21,
              position = position_dodge(width = 0.4)) +
@@ -449,7 +449,7 @@ f1 <- s_dat_compare %>%
   # scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
   #               labels = scales::trans_format("log10", scales::math_format(10^.x))) +
   
-  labs(fill = "", y = "", x = "Odds ratio", title = "", color = "") +
+  labs(fill = "", y = "", x = "Odds ratio (log scale)", title = "", color = "") +
   # scale_fill_manual(values=c("red", "gray")) +
   theme(panel.grid.minor = element_blank(),
         panel.grid.major.x = element_blank(),
@@ -477,7 +477,7 @@ s_map <- rgn %>%
                          "texas" = "Texas",
                          "west" = "West")) %>% 
   left_join(s_d, by = "region") %>% 
-  mutate(class = factor(class, levels = c("Project","Queue")))
+  mutate(class = factor(class, levels = c("Operational","Queue")))
 var <- c("Capacity factor", "Hail", "Wildfire", "Energy community")
 
 s_m <- mping(s_map, var, "")
@@ -495,7 +495,7 @@ ggsave("./trend/fig/f2.png", f2, width = 12, height = 10)
 
 
 
-f3a <- prediction_plot(new_results[[1]], s_pts, "Project")
+f3a <- prediction_plot(new_results[[1]], s_pts, "Operational")
 f3b <- prediction_plot(new_results[[3]], inter_pts, "Queue")
 
 
@@ -588,18 +588,14 @@ f4a <- solar_queue %>%
   guides(color = guide_legend(nrow = 2, byrow = T))
 
 
-
-
-
-f4b <- rst_plot(f4_glm1) +
+f4b <- rst_plot(f4_glm3) +
   scale_y_continuous(
     labels = scales::label_number(accuracy = 1)             
   ) 
 
 
-
-tp <- sqrt(attr(ranef(f4_glm2, condVar=T)[[1]], "postVar"))*1.96
-f4c <- as.data.frame(ranef(f4_glm2)$status) %>% 
+tp <- sqrt(attr(ranef(f4_glm4, condVar=T)[[1]], "postVar"))*1.96
+f4c <- as.data.frame(ranef(f4_glm4)$status) %>% 
   tibble::rownames_to_column("status") %>% 
   dplyr::select(-`(Intercept)`) %>% 
   
@@ -626,7 +622,7 @@ f4c <- as.data.frame(ranef(f4_glm2)$status) %>%
                             str_detect(variable, "env|hail|fire") ~ "Environmental risk",
                             str_detect(variable, "rps|lag|community") ~ "Spatial/policy"),
          domain = factor(domain, levels = c("Technical","Environmental risk","Spatial/policy"))) %>% 
-
+  
   
   ggplot(aes(y = R_effect, x = vari, 
              ymin=lower, ymax=upper, color = status)) +

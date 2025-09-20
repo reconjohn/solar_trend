@@ -156,23 +156,6 @@ f5c <- as.data.frame(ranef(f4_glm4)$status) %>%
         plot.title=element_text(family="Franklin Gothic Demi", size=20)) 
 
 
-f5 <- ggarrange(
-  ggarrange(f4a, f5b, widths = c(1,1.2), nrow = 1),
-  f5c,
-  nrow = 2,
-  heights = c(1,0.9),
-  labels = c("A", "B"),  # Adds labels to plots
-  label.x = 0,        # Adjust horizontal position of labels
-  label.y = 1,        # Adjust vertical position of labels
-  # vjust = 1,
-  # hjust = -1,
-  font.label = list(size = 14, face = "bold")
-  
-)
-
-ggsave("./trend/fig/f5.png", f5, width = 12, height = 12)
-
-
 # ### random slope 
 # RE <- function(){
 #   

@@ -30,7 +30,7 @@ s_inter <- solar_inter %>%
 
 
 s_com <- rbind(s, s_sub, s_inter) %>% 
-  mutate(class = factor(class, levels = c("Project","Substation","Queue")))
+  mutate(class = factor(class, levels = c("Operational","Substation","Queue")))
 
 northeast <- c("CT","ME", "NH", "RI", "VT", "MA", "NY", "PA", "DE", "NJ", "MD")
 midwest <- c("ND", "SD", "NE", "KS", "MN", "IA", "MO", "WI", "IL", "MI", "IN", "OH", "OK") #moved OK to midwest
@@ -65,40 +65,6 @@ rst <- function(data, scene){
   return(rst)
 }
 
-
-# v_name <- c("(Intercept)",
-#             "Transmission",
-#             "Land Acq.",
-#             "Road", 
-#             # "Substation dist",
-#             "Slope",
-#             "Population", 
-# 
-#             "Hail",
-#             "Fire",
-#             "E. Comm.",
-#             
-#             "Lowincome",
-#             "Unemployed",
-#             "Minority", 
-# 
-#             "Forest", 
-#             "Grassland", 
-#             "Shrubland", 
-#             "Riparian", 
-#             "Vegetated", 
-#             "Agriculture", 
-#             "Developed", 
-#             
-#             "Northeast",
-#             "Midwest",
-#             "West",
-#             "South",
-#             "Texas", 
-#             
-#             "Env. score",
-#             "Cap. factor",
-#             "Spatial lag")
 
 v_name <- c("(Intercept)",
             "Transmission\ndistance",
