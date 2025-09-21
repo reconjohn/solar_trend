@@ -30,12 +30,24 @@ solar_queue <- solar_que %>% # filter for utility scale (>1MW)
   filter(match_confidence > 40) %>%
   st_as_sf(coords = c("matched_sub_lon", "matched_sub_lat"), crs = 4269) %>%  # project
   
+  mutate(region = case_when(state %in% northeast ~ "Northeast",
+                            state %in% midwest ~ "Midwest",
+                            state %in% west ~ "West",
+                            state %in% south ~ "South",
+                            state %in% mtwest ~ "Mtwest",
+                            T ~ "Texas")) %>% 
+  
+  mutate(type = ifelse(lbnl_type == "Solar+Battery", "Solar+Battery",
+                       ifelse(lbnl_type == "Solar", "Solar", "Other hybrid")),
+         type = factor(type, levels = c("Solar","Solar+Battery", "Other hybrid")),
+         region = factor(region, levels = c("West","Mtwest","Midwest","Texas","South","Northeast"))) %>% 
+  
   mutate(unique_id = row_number()) %>%
   mutate(status = ifelse(str_detect(ia_status_clean,"IA|Construction"), "Late","Early"),
          status = ifelse(is.na(status), "Early", status)) %>% 
   
   st_transform(crs = 5070) %>% # transform crs to ours
-  dplyr::select(unique_id,state,capacity_mw, status) 
+  dplyr::select(unique_id,state,capacity_mw, status, type, region) 
 
 # queue locations
 s <- solar_locations %>% 
@@ -328,35 +340,30 @@ df_filled <- df_filled %>%
 
 ### phase specific data scaled based on 5km buffer and capacities 
 cap_dat <- df_filled %>% 
-  dplyr::select(-unique_id,-state) %>% 
+  dplyr::select(-unique_id,-state, -region_ne:-region_mtw) %>% 
   mutate(across(
-    .cols = setdiff(names(.), c("capacity_mw", "status", names(.)[str_detect(names(.), "lulc|region")])),
+    .cols = setdiff(names(.), c("capacity_mw", "status", "type", names(.)[str_detect(names(.), "lulc|region")])),
     .fns = ~ scale(.) %>% as.numeric() # scale predictors before regression 
   ))
-
-
-cap_dat_r <- cap_dat %>%
-  mutate(region = names(cap_dat[22:27])[max.col(cap_dat[22:27])]) %>% # revert one-hot incode
-  dplyr::select(-region_ne:-region_mtw)
 
 
 ### capacity modeling 
 model_formula  <- as.formula(capacity_mw ~ tx + landAcq + roads + slope + pop + hail + fire + community + lowincome + minority + unemploy + 
                                lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
-                               region +
+                               region + type +
                                env + cf + lag)
 
-f4_glm3 <- lm(model_formula, data = cap_dat_r)
+f4_glm3 <- lm(model_formula, data = cap_dat)
 
 
 ### capacity modeling by phase
-model_formula  <- as.formula(capacity_mw ~  pop + lowincome + minority + unemploy +  
+model_formula  <- as.formula(capacity_mw ~  roads + pop + lowincome + minority + unemploy +  
                                lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
-                               region +
-                               (tx + landAcq + roads + slope + hail + fire + community + 
-                                  + env + cf + lag|status))
+                               (tx + landAcq + slope + hail + fire + community + 
+                                  + env + cf + lag|status) +
+                               (type | region))
 
-f4_glm4 <- lmer(model_formula, data = cap_dat_r)
+f4_glm4 <- lmer(model_formula, data = cap_dat)
 
 
 ### SI
@@ -397,3 +404,4 @@ save(rgn, solar_que, solar_queue, s, s_sub, solar_inter, s_dat_compare, s_d,
      sampled_data, sampled_data_sub,sampled_cap,
      f3_glm,f3_glm_sub,f4_glm1,f4_glm2,f4_glm3,f4_glm4,
      file = "./data/trend_data.RData")
+load("./data/trend_data.RData")

@@ -3,6 +3,78 @@ processed_layer_path <- "/home/energysiting/data/processed_data/variables"
 
 
 
+s1a <- solar_que %>% # filter for utility scale (>1MW)
+  mutate(region = case_when(state %in% northeast ~ "Northeast",
+                            state %in% midwest ~ "Midwest",
+                            state %in% west ~ "West",
+                            state %in% south ~ "South",
+                            state %in% mtwest ~ "Mtwest",
+                            T ~ "Texas")) %>% 
+  mutate(type = ifelse(lbnl_type == "Solar+Battery", "Solar+Battery",
+                       ifelse(lbnl_type == "Solar", "Solar", "Others")),
+         type = factor(type, levels = c("Solar","Solar+Battery","Others")),
+         region = factor(region, levels = c("West","Mtwest","Midwest","Texas","South","Northeast"))) %>% 
+  mutate(Match = ifelse(match_confidence > 40, "O", "X")) %>% 
+  group_by(type, region) %>% 
+  summarise(Count = n()) %>% 
+  
+  ggplot() +
+  geom_col(aes(x = type, y = Count, fill = type), position = "dodge") +
+  facet_wrap(~region, nrow = 1) +
+  labs(x = "", y = "Count", fill = "") +
+  theme_classic() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_blank(),
+        strip.background =element_rect(fill="gray22",color="gray22"),
+        strip.text = element_text(color = 'white',family="Franklin Gothic Book",size=12, face = "bold"),
+        legend.position = "bottom",
+        legend.key.spacing.x = unit(1, "lines"),
+        # axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text = element_text(color = "black",family="Franklin Gothic Book",size=12),
+        axis.title.x = element_text(color = "black",family="Franklin Gothic Book",size=12),
+        plot.title=element_text(family="Franklin Gothic Demi", size=20))
+
+
+s1b <- solar_que %>% # filter for utility scale (>1MW)
+  mutate(region = case_when(state %in% northeast ~ "Northeast",
+                            state %in% midwest ~ "Midwest",
+                            state %in% west ~ "West",
+                            state %in% south ~ "South",
+                            state %in% mtwest ~ "Mtwest",
+                            T ~ "Texas")) %>% 
+  mutate(type = ifelse(lbnl_type == "Solar+Battery", "Solar+Battery",
+                       ifelse(lbnl_type == "Solar", "Solar", "Others")),
+         type = factor(type, levels = c("Solar","Solar+Battery","Others")),
+         region = factor(region, levels = c("West","Mtwest","Midwest","Texas","South","Northeast"))) %>% 
+  mutate(Match = ifelse(match_confidence > 40, "O", "X")) %>% 
+  group_by(type, region) %>% 
+  summarise(Capacity = mean(capacity_mw, na.rm = T)) %>% 
+  ggplot() +
+  geom_col(aes(x = type, y = Capacity, fill = type), position = "dodge") +
+  facet_wrap(~region, nrow = 1) +
+  labs(x = "", y = "Capacity (MW/project)", fill = "") +
+  theme_classic() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_blank(),
+        strip.background =element_rect(fill="gray22",color="gray22"),
+        strip.text = element_text(color = 'white',family="Franklin Gothic Book",size=12, face = "bold"),
+        legend.position = "bottom",
+        # axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text = element_text(color = "black",family="Franklin Gothic Book",size=12),
+        axis.title.x = element_text(color = "black",family="Franklin Gothic Book",size=12),
+        plot.title=element_text(family="Franklin Gothic Demi", size=20)) +
+  guides(fill = guide_legend(byrow = T))
+
+
+ggsave("./fig/s1.png", 
+       ggarrange(s1a, s1b, nrow = 2,
+                 common.legend = T, legend = "bottom"), width = 12, height = 8)
+
+
 tp <- solar_que %>% # filter for utility scale (>1MW)
   mutate(region = case_when(state %in% northeast ~ "Northeast",
                             state %in% midwest ~ "Midwest",
@@ -20,7 +92,7 @@ tp <- solar_que %>% # filter for utility scale (>1MW)
             `Capacity (MW)` = sum(capacity_mw)) %>% 
   ungroup
 
-s1 <- rbind(
+s2 <- rbind(
   tp %>% 
     dplyr::select(-`Capacity (MW)`) %>% 
     pivot_wider(names_from = Match, values_from = Count) %>% 
@@ -63,11 +135,10 @@ s1 <- rbind(
   guides(fill = guide_legend(byrow=T, nrow = 1))
 
 
-ggsave("./fig/s1.png", s1, width = 12, height = 6)
+ggsave("./fig/s2.png", s2, width = 12, height = 6)
 
 
-
-s2 <- solar_que %>% # filter for utility scale (>1MW)
+s3 <- solar_que %>% # filter for utility scale (>1MW)
   mutate(region = case_when(state %in% northeast ~ "Northeast",
                             state %in% midwest ~ "Midwest",
                             state %in% west ~ "West",
@@ -80,12 +151,12 @@ s2 <- solar_que %>% # filter for utility scale (>1MW)
          region = factor(region, levels = c("West","Mtwest","Midwest","Texas","South","Northeast"))) %>% 
   mutate(Match = ifelse(match_confidence > 40, "O", "X")) %>% 
   group_by(type, region, Match) %>% 
-  summarise(Count = n()) %>% 
+  summarise(Capacity = mean(capacity_mw, na.rm = T)) %>% 
   
   ggplot() +
-  geom_col(aes(x = type, y = Count, fill = Match), position = "dodge") +
+  geom_col(aes(x = type, y = Capacity, fill = Match), position = "dodge") +
   facet_wrap(~region, nrow = 1) +
-  labs(x = "Type", y = "Count", fill = "Matched") +
+  labs(x = "Type", y = "Average capacity (MW/project)", fill = "Matched") +
   theme_classic() +
   theme(panel.grid.minor = element_blank(),
         panel.grid.major.x = element_blank(),
@@ -98,8 +169,27 @@ s2 <- solar_que %>% # filter for utility scale (>1MW)
         axis.title.x = element_text(color = "black",family="Franklin Gothic Book",size=12),
         plot.title=element_text(family="Franklin Gothic Demi", size=20))
 
-ggsave("./fig/s2.png", s10, width = 12, height = 6)
+ggsave("./fig/s3.png", s3, width = 12, height = 6)
 
+
+### table
+solar_que$lbnl_type %>% table()
+solar_que %>% # filter for utility scale (>1MW)
+  mutate(region = case_when(state %in% northeast ~ "Northeast",
+                            state %in% midwest ~ "Midwest",
+                            state %in% west ~ "West",
+                            state %in% south ~ "South",
+                            state %in% mtwest ~ "Mtwest",
+                            T ~ "Texas")) %>% 
+  mutate(type = ifelse(lbnl_type == "Solar+Battery", "Solar+Battery",
+                       ifelse(lbnl_type == "Solar", "Solar", "Others")),
+         type = factor(type, levels = c("Solar","Solar+Battery","Others")),
+         region = factor(region, levels = c("West","Mtwest","Midwest","Texas","South","Northeast"))) %>% 
+  mutate(Match = ifelse(match_confidence > 40, "O", "X")) %>% 
+  group_by(type, Match) %>% 
+  summarise(Count = n(),
+            Capacity = mean(capacity_mw, na.rm = T),
+            sd = sd(capacity_mw, na.rm = T)) 
 
 
 png(filename = "./fig/lulc.png", width = 12, height = 12, units = "in", res = 300)
@@ -325,7 +415,9 @@ dev.off()
 
 
 ### probability change trend
-s8a <- prediction_plot(new_results[[2]], s_pts, "Substation")
+s8a <- prediction_plot(new_results[[2]], s_pts, "Substation") +
+  theme_publication() +
+  theme(legend.position = "bottom")
 s8b <- ggplot() +
   geom_sf(data = polygons_vect, fill = "gray50", color = NA, size = 1.5) +
   geom_spatraster(data = df_results_sub, aes(fill = pred_logReg_s_queue)) +
@@ -342,13 +434,8 @@ s8b <- ggplot() +
   # ) +
   labs(title = "Probability change") +
   theme_minimal() +
-  theme(
-    axis.text = element_blank(),
-    axis.ticks = element_blank(),
-    panel.grid = element_blank(),
-    plot.title = element_text(hjust = 0.5),
-    legend.position = "bottom" # Hide the legend on individual plots
-  )
+  theme_publication() +
+  theme(legend.position = "bottom")
 
 
 
@@ -372,50 +459,32 @@ ggsave("./fig/s8.png", s8, width = 12, height = 12)
 
 
 
-s9 <- solar_que %>% # filter for utility scale (>1MW)
-  mutate(region = case_when(state %in% northeast ~ "Northeast",
-                            state %in% midwest ~ "Midwest",
-                            state %in% west ~ "West",
-                            state %in% south ~ "South",
-                            state %in% mtwest ~ "Mtwest",
-                            T ~ "Texas")) %>% 
-  mutate(type = ifelse(lbnl_type == "Solar+Battery", "Solar+Battery",
-                       ifelse(lbnl_type == "Solar", "Solar", "Others")),
-         type = factor(type, levels = c("Solar","Others","Solar+Battery")),
-         region = factor(region, levels = c("West","Mtwest","Midwest","Texas","South","Northeast"))) %>% 
-  
-  filter(match_confidence > 40) %>%
-  st_as_sf(coords = c("matched_sub_lon", "matched_sub_lat"), crs = 4269) %>%  
-  
-  mutate(capacity_bin = cut(capacity_mw,
-                            breaks = c(1, 50, 200, 500, 1000, Inf),
-                            labels = c("1–50", "51–200", "201–500", "501–1000", "1000+"),
-                            right = FALSE)) %>%
-  
-  ggplot() +
-
-  geom_sf(data = rgn, color = NA, fill = "gray50") + # US border
-  geom_sf(aes(color = type, size = capacity_bin), alpha = 0.7) +
-  geom_sf(data = rgn, color = "gray0", fill = NA) + # US border
-  # Use the same scales for consistency, but legend is hidden here.
-  scale_color_brewer(palette = "RdYlBu", direction = -1, name = "") +
-  scale_size_manual(
-    values = c(0.2, 1, 3, 4, 5)
+s9 <- rst_plot(f4_glm3) +
+  scale_y_continuous(
+    labels = scales::label_number(accuracy = 1)             
   ) +
-  theme_minimal() +
-  
-  labs(title = "Capacity by project type", fill = "", size = "Capacity (MW)") +
-  coord_sf(crs = st_crs(2163), xlim = c(-2500000, 2500000), 
-           ylim = c(-2300000,730000), expand = FALSE, datum = NA) +
-  theme(panel.grid.minor = element_blank(),
-        panel.grid.major.x = element_blank(),
-        legend.text = element_text(color = 'black', size=12),
-        strip.text = element_text(color = 'black',family="Franklin Gothic Book",size=12, face = "bold"),
-        legend.position = "right",
-        legend.key.size = unit(1, 'cm'), 
-        axis.text.y = element_text(color = "black",family="Franklin Gothic Book",size=12),
-        axis.title.x = element_text(color = "black",family="Franklin Gothic Book",size=12),
-        plot.title=element_text(family="Franklin Gothic Demi", size=20, hjust = 0.5))
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(), # Remove horizontal grid lines for clarity.
+    panel.spacing = unit(1.5, "lines"),
+    
+    # Style facet labels.
+    strip.background = element_rect(fill = "gray80", color = NA),
+    strip.text = element_text(color = 'black', face = "bold", size = 10),
+    
+    # Legend position and styling.
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold"),
+    
+    # Axis styling.
+    axis.text.x = element_text(color = "black", size = 10, angle = 45, hjust = 1),
+    axis.title.x = element_text(size = 12, margin = margin(t = 10)),
+    
+    # Title and subtitle styling.
+    plot.title = element_text(face = "bold", size = 18, margin = margin(b = 5), hjust = 0.5),
+    plot.subtitle = element_text(size = 14, color = "gray30", margin = margin(b = 15))
+    
+  )
 
 ggsave("./fig/s9.png", s9, width = 12, height = 10)
 
@@ -424,7 +493,7 @@ ggsave("./fig/s9.png", s9, width = 12, height = 10)
 s10a <- rst_plot(f4_glm1) +
   scale_y_continuous(
     labels = scales::label_number(accuracy = 1)             
-  ) 
+  ) +
 
 
 tp <- sqrt(attr(ranef(f4_glm2, condVar=T)[[1]], "postVar"))*1.96
@@ -500,3 +569,38 @@ s10 <- ggarrange(s10a, s10b,
   font.label = list(size = 14, face = "bold"))
 
 ggsave("./fig/s10.png", s10, width = 12, height = 12)
+
+
+
+### regression results
+# Extract tidy fixed effects summary
+fixed_df <- tidy(fit, effects = "fixed", conf.int = TRUE)
+
+# Define name mapping
+name_map <- c(
+  "TYPEHUQ" = "Multifamily",
+  "SQFTEST" = "Larger home",
+  "YEARMADERANGE" = "Newer home",
+  "TOTROOMS" = "More rooms",
+  "NHSLDMEM" = "More people",
+  "FUELH2O1" = "Electricity (Water Heating)",
+  "FUELH2O5" = "Fuel (Water Heating)",
+  "ACEQUIPM1" = "Central AC",
+  "ACEQUIPM3" = "Room AC",
+  "ACEQUIPM4" = "Portable AC",
+  "ACEQUIPM6" = "Other AC",
+  "MONEYPY" = "Income",
+  "EDUCATION" = "Education",
+  "HOUSEHOLDER_RACE2" = "Black",
+  "HOUSEHOLDER_RACE3" = "Asian",
+  "HOUSEHOLDER_RACE4" = "Other Race"
+)
+
+# Apply the name mapping to the tidy dataframe
+fixed_df <- fixed_df %>%
+  mutate(term = recode(term, !!!name_map))
+
+# Display as formatted table
+kable(fixed_df, digits = 3, caption = "Fixed Effects Summary from Mixed Effect Model") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE)
+# tidy(fit, effects = "ran_pars")

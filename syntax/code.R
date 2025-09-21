@@ -428,45 +428,76 @@ f1 <- s_dat_compare %>%
          domain = factor(domain, levels = c("Technical","Environmental risk","Spatial/policy",
                                             "Social","Land use", "Regional"))) %>% 
   
-  dplyr::rename(sig = color) %>% 
   ggplot(aes(x = pe, y = vari, color = class)) +
-  geom_vline(xintercept = 0,linetype = "dashed", size = 0.5, color = "gray30") +
-  geom_errorbar(aes(xmin=pe-1.96*se, xmax=pe+1.96*se, color = class), width = 0.3, size = 0.7,
-                position = position_dodge(width = 0.4)) +
-  geom_point(aes(fill = class),size = 2,pch=21,
-             position = position_dodge(width = 0.4)) +
-  theme_bw() +
-  facet_wrap(~ domain, nrow = 2, scales = "free") +
-  scale_color_manual(values = c("tomato4","salmon2","steelblue1")) +
-  scale_fill_manual(values = c("tomato4","salmon2","steelblue1")) +
+  
+  geom_vline(xintercept = 0, linetype = "dashed", size = 0.5, color = "gray50") +
+  
+  geom_errorbar(
+    aes(xmin = pe - 1.96 * se, xmax = pe + 1.96 * se), 
+    width = 0.5, size = 0.8,
+    position = position_dodge(width = 0.6)
+  ) +
+  
+  geom_point(
+    aes(fill = class), 
+    size = 2.5, pch = 21, color = "white",
+    position = position_dodge(width = 0.6)
+  ) +
+  
+  facet_wrap(~ domain, nrow = 2, scales = "free_y") +
+  
+  scale_color_manual(
+    name = "Project Status:",
+    values = c("Operational" = "#003f5c",  # Dark Blue
+               "Substation"  = "#4f7aa6",  # Medium Blue
+               "Queue"       = "#ffa600")   # Contrasting Orange
+  ) +
+  scale_fill_manual(
+    name = "Project Status:",
+    values = c("Operational" = "#003f5c",  # Dark Blue
+               "Substation"  = "#4f7aa6",  # Medium Blue
+               "Queue"       = "#ffa600")   # Contrasting Orange
+  ) +
   
   scale_x_continuous(
-    trans = scales::pseudo_log_trans(base = 10, sigma = 0.2),  # Pseudo-log transformation
-    # breaks = c(0, 0.3, 0.6, 1, 1.3, 2),                     # Custom breaks
-    # labels = scales::label_number(accuracy = 0.1)              # Format labels
-  )  +
+    trans = pseudo_log_trans(base = 10, sigma = 0.1),
+    # Define clear, interpretable breaks for the odds ratio.
+    # breaks = c(0.2, 0.5, 1, 2, 5),
+    labels = label_number(accuracy = 0.1)
+  ) +
   
-  # scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
-  #               labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+  labs(
+    x = "Odds ratio (log scale)",
+    y = "", # Y-axis title is removed as variable names are self-explanatory.
+    title = ""
+  ) +
   
-  labs(fill = "", y = "", x = "Odds ratio (log scale)", title = "", color = "") +
-  # scale_fill_manual(values=c("red", "gray")) +
-  theme(panel.grid.minor = element_blank(),
-        panel.grid.major.x = element_blank(),
-        strip.background =element_rect(fill="gray22",color="gray22"),
-        strip.text = element_text(color = 'white',family="Franklin Gothic Book",size=12, face = "bold"),
-        legend.position = "bottom",
-        legend.text = element_text(size = 12),
-        axis.text.x = element_text(color = "black",family="Franklin Gothic Book",size=10),
-        axis.text.y = element_text(color = "black",family="Franklin Gothic Book",size=12),
-        axis.title.x = element_text(color = "black",family="Franklin Gothic Book",size=12),
-        plot.title=element_text(family="Franklin Gothic Demi", size=16, hjust = -0.09, face = "bold"))
+  theme_minimal(base_size = 14, base_family = "Franklin Gothic Book") +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.y = element_blank(), # Remove horizontal grid lines for a cleaner look.
+    panel.spacing = unit(1.5, "lines"), # Add space between facet panels.
+    
+    strip.background = element_rect(fill = "gray90", color = NA),
+    strip.text = element_text(color = 'black', face = "bold", size = 12),
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(size = 11),
+    
+    axis.text = element_text(color = "black", size = 10),
+    axis.title.x = element_text(size = 12, margin = margin(t = 10)),
+    
+    plot.title = element_text(face = "bold", size = 18, margin = margin(b = 5)),
+    plot.subtitle = element_text(size = 14, color = "gray30", margin = margin(b = 15))
+  )
+
 
 ggsave("./fig/f1.png", f1, width = 12, height = 8)
 
 
 
-s_plot <- r_plot(s_d) 
+s_plot <- r_plot(s_d) +
+  theme(legend.position = "bottom")
 
 s_map <- rgn %>% 
   mutate(region = recode(region, 
@@ -505,7 +536,7 @@ f3c <- ggplot() +
   geom_spatraster(data = df_results, aes(fill = pred_logReg_s_queue)) +
   geom_sf(data = polygons_vect, fill = NA, color = "black", linewidth = 0.5) +
   # Use the same scales for consistency, but legend is hidden here.
-  scale_fill_distiller(palette = "RdBu", name = "Probability \ndifference ",
+  scale_fill_distiller(palette = "RdBu", name = "Probability   \ndifference ",
                        na.value = NA,
                        limits = c(-0.7, 0.7)) +      # Emphasizes extremes, compresses center
   
@@ -526,24 +557,43 @@ f3c <- ggplot() +
   labs(title = "Probability change") +
   theme_minimal() +
   theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.y = element_blank(), # Remove horizontal grid lines for clarity.
+    panel.grid = element_blank(),
+    panel.spacing = unit(1.5, "lines"),
+    
+    # Style facet labels.
+    strip.background = element_rect(fill = "white", color = NA),
+    strip.text = element_text(color = 'black', face = "bold", size = 10),
+    
+    # Legend position and styling.
+    legend.position = "right",
+    legend.title = element_text(face = "bold"),
+    
+    # Axis styling.
+    # axis.text = element_text(color = "black", size = 10),
+    axis.title.x = element_text(size = 12, margin = margin(t = 10)),
     axis.text = element_blank(),
     axis.ticks = element_blank(),
-    panel.grid = element_blank(),
-    plot.title = element_text(hjust = 0.5),
-    legend.position = "bottom" # Hide the legend on individual plots
+    
+    # Title and subtitle styling.
+    plot.title = element_text(face = "bold", size = 18, margin = margin(b = 5), hjust = 0.5),
+    plot.subtitle = element_text(size = 14, color = "gray30", margin = margin(b = 15)),
   )
 
 
 
-f3d <- rst_plot(f3_glm) +
-  labs(y = "Probability difference")
+f3d <- rst_plot1(f3_glm) +
+  labs(x = "Probability difference")
 
 
 f3 <- ggarrange(
-  ggarrange(f3a,f3b, nrow = 1, common.legend = T, legend = "bottom"),
-  ggarrange(f3c,f3d, widths = c(1,1.2), nrow = 1),
-  heights = c(1,1.2),
-  nrow = 2,
+  ggarrange(  ggarrange(f3a,f3b, nrow = 2, common.legend = T, legend = "right"),
+              f3c, nrow = 2, heights = c(2,1)),
+ 
+  f3d,
+  widths = c(1,1),
+  nrow = 1,
   labels = c("A", "B"),  # Adds labels to plots
   label.x = 0,        # Adjust horizontal position of labels
   label.y = 1,        # Adjust vertical position of labels
@@ -562,58 +612,87 @@ f4a <- solar_queue %>%
                             labels = c("1–50", "51–200", "201–500", "501–1000", "1000+"),
                             right = FALSE)) %>%
   ggplot() +
-  geom_sf(data = rgn, color = NA, fill = "gray50") + # US border
+  geom_sf(data = rgn, color = NA, fill = "gray85") + # US border
   geom_sf(aes(color = capacity_bin, size = capacity_bin), alpha = 0.7) +
   geom_sf(data = rgn, color = "black", fill = NA, linewidth = 0.7) + # US border
-  scale_color_brewer(palette = "RdYlBu", direction = -1, name = "Capacity (MW)") +
+  # scale_color_brewer(palette = "RdYlBu", direction = -1, name = "Capacity (MW)") +
+  scale_color_viridis_d(option = "plasma") +
   scale_size_manual(
     values = c(0.2, 1, 3, 4, 5)
   ) +
 
   theme_minimal() +
-  labs(title = "Queue projects", fill = "", size = "Capacity (MW)") +
+  labs(title = "Capacity (MW)", fill = "", size = "", color = "") +
   coord_sf(crs = st_crs(2163), xlim = c(-2500000, 2500000), 
            ylim = c(-2300000,730000), expand = FALSE, datum = NA) +
-  theme(panel.grid.minor = element_blank(),
-        panel.grid.major.x = element_blank(),
-        legend.text = element_text(color = 'black', size=12),
-        strip.text = element_text(color = 'black',family="Franklin Gothic Book",size=12, face = "bold"),
-        legend.position = "bottom",
-        panel.background = element_rect(fill = "white", color = NA),
-        plot.background = element_rect(fill = "white", color = NA),
-        legend.key.size = unit(1, 'cm'), 
-        axis.text.y = element_text(color = "black",family="Franklin Gothic Book",size=12),
-        axis.title.x = element_text(color = "black",family="Franklin Gothic Book",size=12),
-        plot.title=element_text(hjust = 0.5)) +
-  guides(color = guide_legend(nrow = 2, byrow = T))
+  theme_publication()
 
 
-f4b <- rst_plot(f4_glm3) +
-  scale_y_continuous(
-    labels = scales::label_number(accuracy = 1)             
-  ) 
+
+f4b <- solar_queue %>%
+  na.omit() %>% 
+  mutate(status = ifelse(status == "Late", "Late phase", "Early phase")) %>% 
+  mutate(status = factor(status, levels = c("Late phase","Early phase"))) %>% 
+  ggplot() +
+  geom_sf(data = rgn, color = NA, fill = "white") + # US border
+  geom_sf(aes(color = status), alpha = 0.8, size = 1.5) +
+  geom_sf(data = rgn, color = "black", fill = NA, linewidth = 0.7) + # US border
+  # scale_color_brewer(palette = "RdYlBu", direction = -1, name = "Capacity (MW)") +
+  
+  scale_color_manual(
+    name = "",
+    values = c("Early phase" = "#5D6D7E", "Late phase" = "red")
+  ) +
+  
+  
+  theme_minimal() +
+  labs(title = "Project phase", fill = "", size = "", color = "") +
+  coord_sf(crs = st_crs(2163), xlim = c(-2500000, 2500000), 
+           ylim = c(-2300000,730000), expand = FALSE, datum = NA) +
+  theme_publication()
 
 
-tp <- sqrt(attr(ranef(f4_glm4, condVar=T)[[1]], "postVar"))*1.96
-f4c <- as.data.frame(ranef(f4_glm4)$status) %>% 
+f4c <- solar_queue %>% # filter for utility scale (>1MW)
+   mutate(capacity_bin = cut(capacity_mw,
+                            breaks = c(1, 50, 200, 500, 1000, Inf),
+                            labels = c("1–50", "51–200", "201–500", "501–1000", "1000+"),
+                            right = FALSE)) %>%
+  
+  ggplot() +
+  
+  geom_sf(data = rgn, color = NA, fill = "white") + # US border
+  geom_sf(aes(color = type, size = capacity_bin), alpha = 0.7) +
+  geom_sf(data = rgn, color = "gray0", fill = NA, linewidth = 0.7) + # US border
+  # Use the same scales for consistency, but legend is hidden here.
+  scale_color_manual(values = c("Solar" = "#0077b6", "Solar+Battery" = "#ee9b00", 
+                                "Other hybrid" = "brown")) +
+  
+  
+  scale_size_manual(values = c(0.5, 1.5, 3, 4.5, 6)) +
+  theme_minimal() +
+  
+  labs(title = "C", fill = "", color = "", size = "") +
+  coord_sf(crs = st_crs(2163), xlim = c(-2500000, 2500000), 
+           ylim = c(-2300000,730000), expand = FALSE, datum = NA) +
+  theme_publication() +
+  theme(plot.title = element_text(face = "bold", size = 14, hjust = -0.01, vjust = 5))+
+  guides(size = "none") 
+
+
+  
+tp <- sqrt(attr(ranef(f4_glm4, condVar=T)[[2]], "postVar"))*1.96
+f4d <- as.data.frame(ranef(f4_glm4)$status) %>% 
   tibble::rownames_to_column("status") %>% 
   dplyr::select(-`(Intercept)`) %>% 
   
   gather(variable, R_effect, -status) %>% 
   
-  mutate(vari = rep(v_name[c(-1,-6,-10:-24)],each = 2),
+  mutate(vari = rep(v_name[c(-1,-4,-6,-10:-24)],each = 2),
          vari = fct_reorder(vari, R_effect)) %>% 
   
   mutate(SE = c(tp[2,2,],tp[3,3,],tp[4,4,],tp[5,5,],tp[6,6,],
-                tp[7,7,],tp[8,8,],tp[9,9,],tp[10,10,],
-                tp[11,11,])) %>% 
+                tp[7,7,],tp[8,8,],tp[9,9,],tp[10,10,])) %>% 
   
-  # mutate(variable = recode(variable, "cf" = "Capacity factor",
-  #                          "hail" = "Hail",
-  #                          "fire" = "Fire",
-  #                          "community" = "Energy community",
-  #                          "lag" = "Spatial effects")) %>% 
-  # mutate(variable = factor(variable, levels = c("Capacity factor", "Hail", "Fire", "Energy community", "Spatial effects"))) %>% 
   mutate(status = factor(status, levels = c("Late","Early"))) %>% 
   mutate(upper = R_effect+SE,
          lower = R_effect-SE) %>% 
@@ -622,44 +701,134 @@ f4c <- as.data.frame(ranef(f4_glm4)$status) %>%
                             str_detect(variable, "env|hail|fire") ~ "Environmental risk",
                             str_detect(variable, "rps|lag|community") ~ "Spatial/policy"),
          domain = factor(domain, levels = c("Technical","Environmental risk","Spatial/policy"))) %>% 
+  ggplot(
+    aes(x = R_effect, y = vari, color = status)
+  ) +
+  
+  geom_vline(xintercept = 0, linetype = "dashed", size = 0.5, color = "gray50") +
+  
+  geom_errorbarh(
+    aes(xmin = lower, xmax = upper),
+    height = 0.4, size = 0.8,
+    position = position_dodge(width = 0.5)
+  ) +
+  geom_point(
+    size = 3,
+    position = position_dodge(width = 0.5)
+  ) +
+
+  facet_wrap(~domain, scales = "free_y", ncol = 1) +
+  
+  scale_color_manual(
+    name = "Phase  ",
+    values = c("Early" = "#5D6D7E", "Late" = "red")
+  ) +
+  
+  labs(
+    x = "Effect on project capacity (MW)",
+    y = ""
+  ) +
+  
+  theme_minimal(base_size = 14, base_family = "Franklin Gothic Book") +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.y = element_blank(), # Remove horizontal grid lines for a dot plot.
+    panel.spacing = unit(2, "lines"),
+    
+    # Style facet labels.
+    strip.background = element_rect(fill = "gray90", color = NA),
+    strip.text = element_text(color = 'black', face = "bold", size = 12),
+    
+    # Legend position and styling.
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold"),
+    
+    # Axis styling - no more rotated text!
+    axis.text = element_text(color = "black", size = 12),
+    axis.title.x = element_text(size = 12, margin = margin(t = 10)),
+    
+    # Title and subtitle styling.
+    plot.title = element_text(face = "bold", size = 18, margin = margin(b = 5)),
+    plot.subtitle = element_text(size = 14, color = "gray30", margin = margin(b = 15))
+  )
+
+tp <- sqrt(attr(ranef(f4_glm4, condVar=T)[[1]], "postVar"))*1.96
+f4e <- as.data.frame(ranef(f4_glm4)$region) %>% 
+  tibble::rownames_to_column("region") %>% 
+  dplyr::select(-`(Intercept)`) %>% 
+  
+  gather(variable, R_effect, -region) %>% 
+  
+  # mutate(vari = rep(v_name[c(-1,-6,-10:-24)],each = 2),
+  #        vari = fct_reorder(vari, R_effect)) %>% 
+  
+  mutate(SE = c(tp[2,2,],tp[3,3,])) %>% 
+  
+  # mutate(status = factor(status, levels = c("Late","Early"))) %>% 
+  mutate(upper = R_effect+SE,
+         lower = R_effect-SE) %>% 
+  mutate(region = factor(region, levels = rev(c("West","Mtwest","Midwest","Texas","South","Northeast")))) %>%
+  mutate(variable = ifelse(variable == "typeOther hybrid", "Other hybrid", "Solar+Battery"),
+         variable = factor(variable, levels = c("Solar+Battery","Other hybrid"))) %>% 
+  mutate(subtitle = "Project type") %>% 
   
   
-  ggplot(aes(y = R_effect, x = vari, 
-             ymin=lower, ymax=upper, color = status)) +
-  geom_hline(yintercept = 0,linetype = "dashed", size = 0.5, color = "gray30") +
+  ggplot(
+    aes(x = R_effect, y = region, color = variable)
+  ) +
   
-  geom_errorbar(width = 0.3, size = 0.8,
-                position = position_dodge(width = 0.5)) +
-  geom_point(size = 3, position = position_dodge(width = 0.5)) +
+  geom_vline(xintercept = 0, linetype = "dashed", size = 0.5, color = "gray50") +
   
-  # geom_pointrangeh(position = position_dodge2v(height = 0.4), fatten = 2, size = 0.7) +
+  geom_errorbarh(
+    aes(xmin = lower, xmax = upper),
+    height = 0.4, size = 0.8,
+    position = position_dodge(width = 0.5)
+  ) +
+  geom_point(
+    size = 3,
+    position = position_dodge(width = 0.5)
+  ) +
   
-  facet_wrap(~domain, scales = "free") +
-  theme_bw() +
+  facet_wrap(~subtitle, scales = "free_y", ncol = 1) +
   
+  scale_color_manual(values = c("Solar+Battery" = "#ee9b00", 
+                                "Other hybrid" = "brown")) +
+  labs(
+    x = "Effect on project capacity (MW)",
+    y = "",
+    color = "",
+    title = "D"
+  ) +
   
-  labs(y = "Capacity (MW)", x ="", color = "Phase",
-       title = "") +
-  
-  scale_color_manual(values=c("brown", "darkblue")) +
-  theme(panel.grid.minor = element_blank(),
-        panel.grid.major.x = element_blank(),
-        strip.background =element_rect(fill="gray22",color="gray22"),
-        strip.text = element_text(color = 'white',family="Franklin Gothic Book",size=12, face = "bold"),
-        legend.position = "bottom",
-        legend.text = element_text(size=12),
-        axis.text.x = element_text(color = "black",family="Franklin Gothic Book",size=12,
-                                   angle = 45, hjust = 1),
-        axis.text.y = element_text(color = "black",family="Franklin Gothic Book",size=12),
-        axis.title.x = element_text(color = "black",family="Franklin Gothic Book",size=12),
-        plot.title=element_text(family="Franklin Gothic Demi", size=20)) 
+  theme_minimal(base_size = 14, base_family = "Franklin Gothic Book") +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.y = element_blank(), # Remove horizontal grid lines for a dot plot.
+    panel.spacing = unit(2, "lines"),
+    
+    # Style facet labels.
+    strip.background = element_rect(fill = "gray90", color = NA),
+    strip.text = element_text(color = 'black', face = "bold", size = 12),
+    
+    # Legend position and styling.
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold"),
+    
+    # Axis styling - no more rotated text!
+    axis.text = element_text(color = "black", size = 12),
+    axis.title.x = element_text(size = 12, margin = margin(t = 10)),
+    
+    # Title and subtitle styling.
+    plot.title = element_text(face = "bold", size = 14, margin = margin(b = 5), hjust = -0.26),
+    plot.subtitle = element_text(size = 14, color = "gray30", margin = margin(b = 15))
+  )
 
 
 f4 <- ggarrange(
-  ggarrange(f4a, f4b, widths = c(1,1.2), nrow = 1),
-  f4c,
-  nrow = 2,
-  heights = c(1,0.9),
+  ggarrange(f4a, f4b, f4c, heights = c(0.9,1,1.2), nrow = 3),
+  ggarrange(f4d, f4e, nrow = 2, heights = c(3,1.5)),
+  nrow = 1,
+  widths = c(1,0.7),
   labels = c("A", "B"),  # Adds labels to plots
   label.x = 0,        # Adjust horizontal position of labels
   label.y = 1,        # Adjust vertical position of labels
@@ -671,38 +840,4 @@ f4 <- ggarrange(
 
 ggsave("./fig/f4.png", f4, width = 12, height = 12)
 
-
-
-### regression results
-# Extract tidy fixed effects summary
-fixed_df <- tidy(fit, effects = "fixed", conf.int = TRUE)
-
-# Define name mapping
-name_map <- c(
-  "TYPEHUQ" = "Multifamily",
-  "SQFTEST" = "Larger home",
-  "YEARMADERANGE" = "Newer home",
-  "TOTROOMS" = "More rooms",
-  "NHSLDMEM" = "More people",
-  "FUELH2O1" = "Electricity (Water Heating)",
-  "FUELH2O5" = "Fuel (Water Heating)",
-  "ACEQUIPM1" = "Central AC",
-  "ACEQUIPM3" = "Room AC",
-  "ACEQUIPM4" = "Portable AC",
-  "ACEQUIPM6" = "Other AC",
-  "MONEYPY" = "Income",
-  "EDUCATION" = "Education",
-  "HOUSEHOLDER_RACE2" = "Black",
-  "HOUSEHOLDER_RACE3" = "Asian",
-  "HOUSEHOLDER_RACE4" = "Other Race"
-)
-
-# Apply the name mapping to the tidy dataframe
-fixed_df <- fixed_df %>%
-  mutate(term = recode(term, !!!name_map))
-
-# Display as formatted table
-kable(fixed_df, digits = 3, caption = "Fixed Effects Summary from Mixed Effect Model") %>%
-  kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE)
-# tidy(fit, effects = "ran_pars")
 
