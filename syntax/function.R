@@ -447,7 +447,7 @@ rst_plot1 <- function(result){
     # scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
     #               labels = scales::trans_format("log10", scales::math_format(10^.x))) +
     
-    labs(fill = "", x = "", y = "Capacity (MW)", title = "", color = "") +
+    labs(fill = "", x = "", y = "", title = "", color = "") +
     # scale_fill_manual(values=c("red", "gray")) +
     
     theme_minimal(base_size = 14, base_family = "Franklin Gothic Book") +
