@@ -671,7 +671,7 @@ f4c <- solar_queue %>% # filter for utility scale (>1MW)
   scale_size_manual(values = c(0.5, 1.5, 3, 4.5, 6)) +
   theme_minimal() +
   
-  labs(title = "C", fill = "", color = "", size = "") +
+  labs(title = "C                         Project type", fill = "", color = "", size = "") +
   coord_sf(crs = st_crs(2163), xlim = c(-2500000, 2500000), 
            ylim = c(-2300000,730000), expand = FALSE, datum = NA) +
   theme_publication() +
