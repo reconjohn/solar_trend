@@ -484,9 +484,9 @@ f1 <- s_dat_compare %>%
     strip.text = element_text(color = 'black', face = "bold", size = 12),
     legend.position = "bottom",
     legend.title = element_text(face = "bold"),
-    legend.text = element_text(size = 11),
+    legend.text = element_text(size = 12),
     
-    axis.text = element_text(color = "black", size = 10),
+    axis.text = element_text(color = "black", size = 12),
     axis.title.x = element_text(size = 12, margin = margin(t = 10)),
     
     plot.title = element_text(face = "bold", size = 18, margin = margin(b = 5)),
@@ -626,14 +626,14 @@ s_plot <- s_d %>%
     
     # Style facet labels.
     strip.background = element_rect(fill = "gray90", color = NA),
-    strip.text = element_text(color = 'black', face = "bold", size = 10),
+    strip.text = element_text(color = 'black', face = "bold", size = 12),
     
     # Legend position and styling.
     legend.position = "right",
     legend.title = element_text(face = "bold"),
     
     # Axis styling.
-    axis.text = element_text(color = "black", size = 10),
+    axis.text = element_text(color = "black", size = 12),
     axis.title.x = element_text(size = 12, margin = margin(t = 10)),
     
     # Title and subtitle styling.

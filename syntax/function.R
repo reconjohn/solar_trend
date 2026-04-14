@@ -211,11 +211,11 @@ mping <- function(data, var, tech){
                 scale_fill_gradient2(low = if (x %in% c("Hail", "Wildfire")) "brown" else "cornflowerblue", 
                                      mid = "white", 
                                      high = if (x %in% c("Hail", "Wildfire")) "cornflowerblue" else "brown",
-                                     midpoint = 0,
-                                     labels = scales::label_number(accuracy = 1)) +
+                                     midpoint = 0 # labels = scales::label_number(accuracy = 0.1)
+                                     ) +
                 # facet_wrap(~class, nrow = 1) +
                 
-                labs(title = x, fill = "Probability (%)") +
+                labs(title = x, fill = "Probability\ndifference (%)") +
                 coord_sf(crs = st_crs(2163), xlim = c(-2500000, 2500000), 
                          ylim = c(-2300000,730000), expand = FALSE, datum = NA) +
                 theme(
@@ -450,7 +450,7 @@ rst_plot1 <- function(result, result1){
     geom_errorbar(aes(xmin=(pe-1.96*se)*100, xmax=(pe+1.96*se)*100), width = 0.3, size = 0.7,
                   position = position_dodge(width = 0.9)) +
     
-    geom_point(aes(fill = status),size = 2,pch=21, color = "white",
+    geom_point(aes(fill = status),size = 3,pch=21, color = "white",
                position = position_dodge(width = 0.9)) +
     facet_wrap(~domain, scales = "free", nrow = 3) +
     theme_bw() +
@@ -484,14 +484,14 @@ rst_plot1 <- function(result, result1){
       
       # Style facet labels.
       strip.background = element_rect(fill = "gray80", color = NA),
-      strip.text = element_text(color = 'black', face = "bold", size = 10),
+      strip.text = element_text(color = 'black', face = "bold", size = 12),
       
       # Legend position and styling.
       legend.position = "right",
       legend.title = element_text(face = "bold", size = 12),
       
       # Axis styling.
-      axis.text.x = element_text(color = "black", size = 10, hjust = 1),
+      axis.text = element_text(color = "black", size = 12, hjust = 1),
       axis.title.x = element_text(size = 12, margin = margin(t = 10)),
       
       # Title and subtitle styling.

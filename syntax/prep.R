@@ -276,56 +276,57 @@ model_formula  <- as.formula(pred_logReg_s_queue ~ tx + landAcq + roads + slope 
 f3_glm <- lm(model_formula, data = df_model)
 
 
-df_model$region <- names(df_model %>% dplyr::select(starts_with("region_")))[
-  max.col(df_model %>% dplyr::select(starts_with("region_")), ties.method = "first")
-]
-
-df_model$lulc <- names(df_model %>% dplyr::select(starts_with("lulc")))[
-  max.col(df_model %>% dplyr::select(starts_with("lulc_")), ties.method = "first")
-]
-
-da <- df_model %>% 
-  dplyr::select(-lulc_forest:-region_mtw) %>% 
-  dplyr::rename(prob = pred_logReg_s_queue) %>% 
-  mutate(lulc = as.factor(lulc))
-
-
-  model1vars <- names(da)[c(2:17)] %>%
-    setdiff(c("cf","hail","fire","community","region"))
-  fvar <- as.formula(paste("prob ~", paste(model1vars, collapse = " + "), "+ (cf+hail+fire+community|region)"))
-  
-  contrasts(da$lulc) <- contr.sum(levels(da$lulc))
-  
-  fit <- lmer(fvar, data = da)
-  
-  # summary(fit)
-  
-  tp <- sqrt(attr(ranef(fit, condVar=T)[[1]], "postVar"))*1.96
-  
-  d <- as.data.frame(ranef(fit)$region) %>%
-    tibble::rownames_to_column("region") %>%
-    mutate(region = recode(region,
-                           "region_mtw" = "Mtwest",
-                           "region_mw" = "Midwest",
-                           "region_ne" = "Northeast",
-                           "region_s" = "South",
-                           "region_tex" = "Texas",
-                           "region_w" = "West")) %>%
-    dplyr::select(-`(Intercept)`) %>%
-    gather(variable, R_effect, -region) %>%
-    mutate(SE = c(tp[2,2,],tp[3,3,],tp[4,4,],tp[5,5,]))
-  
-
-s_d <- d %>%
-  mutate(variable = factor(variable, levels = c("cf", "hail", "fire", "community"))) %>%
-  mutate(variable = recode(variable, "cf" = "Capacity factor",
-                           "hail" = "Hail",
-                           "fire" = "Wildfire",
-                           "community" = "Energy community"),
-         variable = factor(variable, levels = c("Capacity factor","Hail","Wildfire","Energy community"))) %>%
-  mutate(region = factor(region, levels = rev(c("West","Mtwest","Midwest","Texas","South","Northeast"))))
-
-write.csv(s_d, "./data_compare.csv", row.names = FALSE)
+# df_model$region <- names(df_model %>% dplyr::select(starts_with("region_")))[
+#   max.col(df_model %>% dplyr::select(starts_with("region_")), ties.method = "first")
+# ]
+# 
+# df_model$lulc <- names(df_model %>% dplyr::select(starts_with("lulc")))[
+#   max.col(df_model %>% dplyr::select(starts_with("lulc_")), ties.method = "first")
+# ]
+# 
+# da <- df_model %>%
+#   dplyr::select(-lulc_forest:-region_mtw) %>%
+#   dplyr::rename(prob = pred_logReg_s_queue) %>%
+#   mutate(lulc = as.factor(lulc))
+# 
+# 
+#   model1vars <- names(da)[c(2:17)] %>%
+#     setdiff(c("cf","hail","fire","community","region"))
+#   fvar <- as.formula(paste("prob ~", paste(model1vars, collapse = " + "), "+ (cf+hail+fire+community|region)"))
+# 
+#   contrasts(da$lulc) <- contr.sum(levels(da$lulc))
+# 
+#   fit <- lmer(fvar, data = da)
+# 
+#   # summary(fit)
+# 
+#   tp <- sqrt(attr(ranef(fit, condVar=T)[[1]], "postVar"))*1.96
+# 
+#   d <- as.data.frame(ranef(fit)$region) %>%
+#     tibble::rownames_to_column("region") %>%
+#     mutate(region = recode(region,
+#                            "region_mtw" = "Mtwest",
+#                            "region_mw" = "Midwest",
+#                            "region_ne" = "Northeast",
+#                            "region_s" = "South",
+#                            "region_tex" = "Texas",
+#                            "region_w" = "West")) %>%
+#     dplyr::select(-`(Intercept)`) %>%
+#     gather(variable, R_effect, -region) %>%
+#     mutate(SE = c(tp[2,2,],tp[3,3,],tp[4,4,],tp[5,5,]))
+# 
+# 
+# s_d <- d %>%
+#   mutate(variable = factor(variable, levels = c("cf", "hail", "fire", "community"))) %>%
+#   mutate(variable = recode(variable, "cf" = "Capacity factor",
+#                            "hail" = "Hail",
+#                            "fire" = "Wildfire",
+#                            "community" = "Energy community"),
+#          variable = factor(variable, levels = c("Capacity factor","Hail","Wildfire","Energy community"))) %>%
+#   mutate(region = factor(region, levels = rev(c("West","Mtwest","Midwest","Texas","South","Northeast"))))
+# 
+# write.csv(s_d, "./data_compare1.csv", row.names = FALSE)
+s_d <- read.csv("./data_compare1.csv")
 
 
 # df_results_sub <- new_results[[3]] - new_results[[2]] # queue - sub
@@ -444,18 +445,18 @@ model_formula  <- as.formula(capacity ~ tx + landAcq + roads + slope + pop + hai
 
 f4_glm1 <- lm(model_formula, data = df_cap)
 
-model_formula  <- as.formula(capacity ~  pop + lowincome + minority + unemploy +  
-                               lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
-                               region_mw + region_ne +  region_s + region_tex + region_w + region_mtw +
-                               (tx + landAcq + roads + slope + hail + fire + community + 
-                                  + env + cf + lag|status))
+# model_formula  <- as.formula(capacity ~  pop + lowincome + minority + unemploy +  
+#                                lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
+#                                region_mw + region_ne +  region_s + region_tex + region_w + region_mtw +
+#                                (tx + landAcq + roads + slope + hail + fire + community + 
+#                                   + env + cf + lag|status))
 
 model_formula  <- as.formula(capacity ~  landAcq + slope + env + roads + pop + lowincome + minority + unemploy +  
                                lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
-                               (tx + hail + fire + community + cf + lag):status +
-                               (type | region))
+                               region_mw + region_ne +  region_s + region_tex + region_w + region_mtw +
+                               (tx + hail + fire + community + cf + lag):status)
 
-f4_glm2 <- lmer(model_formula, data = df_cap)
+f4_glm2 <- lm(model_formula, data = df_cap)
 
 
 save(rgn, solar_que, solar_queue, s, s_sub, solar_inter, s_dat_compare, s_d,
