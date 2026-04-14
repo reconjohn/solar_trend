@@ -5,7 +5,7 @@ if (!require(librarian)){
 
 librarian::shelf("raster", "sf", "tidyverse", "terra", "here", "tictoc", "foreach", "doParallel", "foreign", "dplyr","tigris",
                  "stargazer", "caret", "tidycensus", "ggpubr", "tidyterra", "gridExtra", "rasterVis", "RColorBrewer", "grid",
-                 "lme4", "lmerTest", "ggstance", "cowplot", "mapview")
+                 "lme4", "lmerTest", "ggstance", "cowplot", "mapview","scales","ggeffects","broom.mixed")
 sf_use_s2(FALSE)
 library(ggnewscale)
 ggsave <- function(..., bg = 'white') ggplot2::ggsave(..., bg = bg)
@@ -198,23 +198,24 @@ r_plot <- function(data){
 
 
 mping <- function(data, var, tech){
+
   maps <- map(.x = var,
               .f = function(x) data %>%
                 filter(variable == x) %>%
                 
                 ggplot() +
                 geom_sf(fill = "white", color = "gray0") + # US border
-                geom_sf(aes(fill = exp(R_effect)), size = 0.3) +
+                geom_sf(aes(fill = R_effect), size = 0.3) +
                 
                 theme_minimal() +
                 scale_fill_gradient2(low = if (x %in% c("Hail", "Wildfire")) "brown" else "cornflowerblue", 
                                      mid = "white", 
                                      high = if (x %in% c("Hail", "Wildfire")) "cornflowerblue" else "brown",
-                                     midpoint = 1,
-                                     labels = scales::label_number(accuracy = 0.1)) +
-                facet_wrap(~class, nrow = 1) +
+                                     midpoint = 0,
+                                     labels = scales::label_number(accuracy = 1)) +
+                # facet_wrap(~class, nrow = 1) +
                 
-                labs(title = x, fill = "") +
+                labs(title = x, fill = "Probability (%)") +
                 coord_sf(crs = st_crs(2163), xlim = c(-2500000, 2500000), 
                          ylim = c(-2300000,730000), expand = FALSE, datum = NA) +
                 theme(
@@ -235,19 +236,17 @@ mping <- function(data, var, tech){
                   axis.title.x = element_text(size = 12, margin = margin(t = 10)),
                   
                   # Title and subtitle styling.
-                  plot.title = element_text(face = "bold", size = 18, margin = margin(b = 5), hjust = 0.1),
+                  plot.title = element_text(face = "bold", size = 16, margin = margin(b = 5), hjust = 0.1),
                   plot.subtitle = element_text(size = 14, color = "gray30", margin = margin(b = 15))
                 )
-         
   )
   
-  tp <- plot_grid(plotlist = maps, labels = tech, label_size = 14, label_fontface = "plain", nrow = 4, hjust = -0.2)
+  tp <- cowplot::plot_grid(plotlist = maps, labels = tech, label_size = 14, label_fontface = "plain", nrow = 4, hjust = -0.2)
   
   return(tp)
 }
 
 # f3
-
 s_pts <- s %>% 
   vect()
 inter_pts <- s_inter %>% 
@@ -292,7 +291,7 @@ prediction_plot <- function(data1, data2, class){
       strip.text = element_text(color = 'black', face = "bold", size = 10),
       
       # Legend position and styling.
-      legend.position = "bottom",
+      legend.position = "right",
       legend.title = element_text(face = "bold"),
       
       # Axis styling.
@@ -405,7 +404,7 @@ rst_plot <- function(result){
 }
 
 
-rst_plot1 <- function(result){
+rst_plot1 <- function(result, result1){
   rst_cap <- summary(result)$coefficients %>% 
     as.data.frame() %>% 
     # mutate(var = v_name) %>% 
@@ -417,10 +416,25 @@ rst_plot1 <- function(result){
            pe = Estimate) %>%
     mutate(color = factor(color, levels = c("Significant", "Non-significant")))  # Order 'var' based on 'exp(pe)'
   
+  rst_cap1 <- summary(result1)$coefficients %>% 
+    as.data.frame() %>% 
+    # mutate(var = v_name) %>% 
+    mutate(color = ifelse(`Pr(>|t|)` < 0.05, "Significant", "Non-significant")) %>%
+    dplyr::select(-"t value",-"Pr(>|t|)") %>% 
+    tibble::rownames_to_column("var") %>%
+    # filter(!var == "(Intercept)") %>% 
+    rename(se = "Std. Error",
+           pe = Estimate) %>%
+    mutate(color = factor(color, levels = c("Significant", "Non-significant")))  # Order 'var' based on 'exp(pe)'
+  
   p <- rst_cap %>% 
-    mutate(vari = v_name,
+    mutate(status = "Operational") %>% 
+    rbind(rst_cap1 %>% 
+            mutate(status = "Substation")) %>% 
+    mutate(vari = rep(v_name,2),
            vari = fct_reorder(vari, pe)) %>% 
     filter(!var == "(Intercept)") %>%
+    filter(!var %in% c("slope","env","landAcq","roads")) %>% 
     mutate(domain = case_when(str_detect(var, "tx|roads|landAcq|cf|slope") ~ "Technical",
                               str_detect(var, "env|hail|fire") ~ "Environmental risk",
                               str_detect(var, "lowincome|minority|unemploy|pop") ~ "Social",
@@ -429,23 +443,35 @@ rst_plot1 <- function(result){
                               str_detect(var, "region") ~ "Regional"),
            domain = factor(domain, levels = c("Technical","Environmental risk","Spatial/policy",
                                               "Social","Land use", "Regional"))) %>% 
+    filter(domain %in% c("Technical","Environmental risk","Spatial/policy")) %>% 
     
-    ggplot(aes(x = pe, y = vari, color = color)) +
+    ggplot(aes(x = pe*100, y = vari, color = status)) +
     geom_vline(xintercept = 0,linetype = "dashed", size = 0.5, color = "gray30") +
-    geom_errorbar(aes(xmin=pe-1.96*se, xmax=pe+1.96*se), width = 0.3, size = 0.7,
+    geom_errorbar(aes(xmin=(pe-1.96*se)*100, xmax=(pe+1.96*se)*100), width = 0.3, size = 0.7,
                   position = position_dodge(width = 0.9)) +
-    geom_point(aes(fill = color),size = 2,pch=21,
+    
+    geom_point(aes(fill = status),size = 2,pch=21, color = "white",
                position = position_dodge(width = 0.9)) +
-    facet_wrap(~domain, scales = "free", ncol = 2) +
+    facet_wrap(~domain, scales = "free", nrow = 3) +
     theme_bw() +
     scale_x_continuous(
       # trans = scales::pseudo_log_trans(base = 10, sigma = 0.2),  # Pseudo-log transformation
       # breaks = c(0, 1, 2, 4),                     # Custom breaks
-      labels = scales::label_number(accuracy = 0.01)              # Format labels
+      labels = scales::label_number(accuracy = 1)              # Format labels
     )  +
     
     # scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
     #               labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+    
+    scale_color_manual(
+      name = "Difference\nbased on",
+      values = c("Operational" = "#001b28",  # Dark Blue
+                 "Substation"  = "#4f7aa6")) +  # Contrasting Orange
+    
+    scale_fill_manual(
+      name = "Difference\nbased on",
+      values = c("Operational" = "#001b28",  # Dark Blue
+                 "Substation"  = "#4f7aa6")) +  # Contrasting Orange
     
     labs(fill = "", x = "", y = "", title = "", color = "") +
     # scale_fill_manual(values=c("red", "gray")) +
@@ -461,11 +487,11 @@ rst_plot1 <- function(result){
       strip.text = element_text(color = 'black', face = "bold", size = 10),
       
       # Legend position and styling.
-      legend.position = "bottom",
-      legend.title = element_text(face = "bold"),
+      legend.position = "right",
+      legend.title = element_text(face = "bold", size = 12),
       
       # Axis styling.
-      axis.text.x = element_text(color = "black", size = 8, angle = 45, hjust = 1),
+      axis.text.x = element_text(color = "black", size = 10, hjust = 1),
       axis.title.x = element_text(size = 12, margin = margin(t = 10)),
       
       # Title and subtitle styling.
