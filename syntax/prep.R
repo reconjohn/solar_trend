@@ -403,11 +403,16 @@ cap_dat <- df_filled %>%
 
 
 ### capacity modeling 
-model_formula  <- as.formula(capacity_mw ~ tx + landAcq + roads + slope + pop + hail + fire + community + lowincome + minority + unemploy + 
+# model_formula  <- as.formula(capacity_mw ~ tx + landAcq + roads + slope + pop + hail + fire + community + lowincome + minority + unemploy +
+#                                lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
+#                                region + type +
+#                                env + cf + lag)
+model_formula  <- as.formula(capacity_mw ~  landAcq + slope + env + roads + pop + lowincome + minority + unemploy +
                                lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
-                               region + type +
-                               env + cf + lag)
+                               (tx + hail + fire + community + cf + lag):status +
+                               region)
 
+cap_dat$region <- relevel(cap_dat$region, ref = "Northeast")
 f4_glm3 <- lm(model_formula, data = cap_dat)
 
 
@@ -428,39 +433,54 @@ f4_glm4 <- lmer(model_formula, data = cap_dat)
 # write.csv(sampled_cap, "./data/f5_capa_queue.csv", row.names = FALSE)
 sampled_cap <- read_csv("./data/f5_capa_queue.csv")
 
-df_cap <- sampled_cap %>% 
+df_cap <- sampled_cap %>%
   mutate(across(
     .cols = setdiff(names(.), c(names(.)[str_detect(names(.), "lulc|region")])),
-    .fns = ~ scale(.) %>% as.numeric() # scale predictors before regression 
-  ))
+    .fns = ~ scale(.) %>% as.numeric() # scale predictors before regression
+  )) %>%
+  mutate(region = names(sampled_cap[20:25])[max.col(sampled_cap[20:25])],
+         region = recode(region, 
+                         "region_mtw" = "Mtwest",
+                         "region_mw" = "Midwest",
+                         "region_ne" = "Northeast",
+                         "region_s" = "South",
+                         "region_tex" = "Texas",
+                         "region_w" = "West"),
+         region = as.factor(region)) %>%
+  dplyr::select(-region_ne:-region_mtw)
 
 
 df_cap$capacity <- solar_queue$capacity_mw
 df_cap$status <- solar_queue$status
 
-model_formula  <- as.formula(capacity ~ tx + landAcq + roads + slope + pop + hail + fire + community + lowincome + minority + unemploy + 
-                               lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
-                               region_mw + region_ne +  region_s + region_tex + region_w + region_mtw +
-                               env + cf + lag)
-
-f4_glm1 <- lm(model_formula, data = df_cap)
-
-# model_formula  <- as.formula(capacity ~  pop + lowincome + minority + unemploy +  
+# model_formula  <- as.formula(capacity ~ tx + landAcq + roads + slope + pop + hail + fire + community + lowincome + minority + unemploy +
 #                                lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
 #                                region_mw + region_ne +  region_s + region_tex + region_w + region_mtw +
-#                                (tx + landAcq + roads + slope + hail + fire + community + 
-#                                   + env + cf + lag|status))
+#                                env + cf + lag)
 
-model_formula  <- as.formula(capacity ~  landAcq + slope + env + roads + pop + lowincome + minority + unemploy +  
+model_formula  <- as.formula(capacity ~  landAcq + slope + env + roads + pop + lowincome + minority + unemploy +
                                lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
-                               region_mw + region_ne +  region_s + region_tex + region_w + region_mtw +
-                               (tx + hail + fire + community + cf + lag):status)
+                               (tx + hail + fire + community + cf + lag):status +
+                               region)
+df_cap$region <- relevel(df_cap$region, ref = "Northeast")
+f4_glm1 <- lm(model_formula, data = df_cap)
 
-f4_glm2 <- lm(model_formula, data = df_cap)
+# model_formula  <- as.formula(capacity ~  pop + lowincome + minority + unemploy +
+#                                lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
+#                                region_mw + region_ne +  region_s + region_tex + region_w + region_mtw +
+#                                (tx + landAcq + roads + slope + hail + fire + community +
+#                                   + env + cf + lag|status))
+# 
+# model_formula  <- as.formula(capacity ~  landAcq + slope + env + roads + pop + lowincome + minority + unemploy +
+#                                lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
+#                                region +
+#                                (tx + hail + fire + community + cf + lag):status)
+# 
+# f4_glm2 <- lm(model_formula, data = df_cap)
 
 
 save(rgn, solar_que, solar_queue, s, s_sub, solar_inter, s_dat_compare, s_d,
      sampled_data, sampled_data_sub,sampled_cap,
-     f3_glm,f3_glm_sub,f4_glm1,f4_glm2,f4_glm3,f4_glm4,
+     f3_glm,f3_glm_sub,f4_glm1,f4_glm3,f4_glm4,
      file = "./data/trend_data.RData")
 load("./data/trend_data.RData")

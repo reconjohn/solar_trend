@@ -62,7 +62,8 @@ rst <- function(data, scene){
     mutate(color = factor(color, levels = c("Y", "N"))) %>%  # Order 'var' based on 'exp(pe)'
     mutate(class = scene)
   
-  return(rst)
+  return(list(rst,glm1_solar))
+         
 }
 
 
@@ -319,7 +320,7 @@ prediction_plot <- function(data1, data2, class){
 }
 
 
-rst_plot <- function(result){
+rst_plot <- function(result, result1){
   rst_cap <- summary(result)$coefficients %>% 
     as.data.frame() %>% 
     # mutate(var = v_name) %>% 
@@ -331,9 +332,26 @@ rst_plot <- function(result){
            pe = Estimate) %>%
     mutate(color = factor(color, levels = c("Significant", "Non-significant")))  # Order 'var' based on 'exp(pe)'
   
+  rst_cap1 <- summary(result1)$coefficients %>% 
+    as.data.frame() %>% 
+    # mutate(var = v_name) %>% 
+    mutate(color = ifelse(`Pr(>|t|)` < 0.05, "Significant", "Non-significant")) %>%
+    dplyr::select(-"t value",-"Pr(>|t|)") %>% 
+    tibble::rownames_to_column("var") %>%
+    # filter(!var == "(Intercept)") %>% 
+    rename(se = "Std. Error",
+           pe = Estimate) %>%
+    mutate(color = factor(color, levels = c("Significant", "Non-significant")))  # Order 'var' based on 'exp(pe)'
+  
   p <- rst_cap %>% 
-    mutate(vari = v_name,
-           vari = fct_reorder(vari, pe)) %>% 
+    mutate(class = "1 mile") %>% 
+    rbind(
+      rst_cap1 %>% 
+        mutate(class = "250 meter")
+      
+    ) %>% 
+    # mutate(vari = v_name,
+    #        vari = fct_reorder(vari, pe)) %>% 
     filter(!var == "(Intercept)") %>%
     mutate(domain = case_when(str_detect(var, "tx|roads|landAcq|cf|slope") ~ "Technical",
                               str_detect(var, "env|hail|fire") ~ "Environmental risk",
@@ -344,11 +362,11 @@ rst_plot <- function(result){
            domain = factor(domain, levels = c("Technical","Environmental risk","Spatial/policy",
                                               "Social","Land use", "Regional"))) %>% 
     
-    ggplot(aes(x = vari, y = pe, color = color)) +
+    ggplot(aes(x = var, y = pe, color = class)) +
     geom_hline(yintercept = 0,linetype = "dashed", size = 0.5, color = "gray30") +
     geom_errorbar(aes(ymin=pe-1.96*se, ymax=pe+1.96*se), width = 0.3, size = 0.7,
                   position = position_dodge(width = 0.9)) +
-    geom_point(aes(fill = color),size = 2,pch=21,
+    geom_point(aes(fill = class),size = 2,pch=21,
                position = position_dodge(width = 0.9)) +
     facet_wrap(~domain, scales = "free") +
     theme_bw() +

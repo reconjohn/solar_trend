@@ -409,11 +409,15 @@ ggsave("./fig/f0.png", f0, width = 12, height = 8)
 
 f1 <- s_dat_compare %>% 
   rst("Operational") %>% 
+  pluck(1) %>% 
+
   rbind(
     s_dat_compare %>% 
-      rst("Substation"),
+      rst("Substation") %>% 
+      pluck(1),
     s_dat_compare %>% 
-      rst("Queue")
+      rst("Queue") %>% 
+      pluck(1)
   ) %>% 
   mutate(class = factor(class, levels = c("Operational","Substation","Queue"))) %>% 
   mutate(vari = rep(v_name, 3),
@@ -442,7 +446,7 @@ f1 <- s_dat_compare %>%
   
   geom_point(
     aes(fill = class), 
-    size = 2.5, pch = 21, color = "white",
+    size = 3.5, pch = 21, color = "white",
     position = position_dodge(width = 0.6)
   ) +
   
@@ -583,6 +587,8 @@ ggsave("./fig/f2.png", f2, width = 12, height = 10)
 
 
 s_plot <- s_d %>% 
+  mutate(variable = factor(variable, levels = c("Capacity factor","Hail","Wildfire","Energy community")),
+         region = factor(region, levels = rev(c("West","Mtwest","Midwest","Texas","South","Northeast")))) %>% 
   ggplot(
     aes(x = R_effect*100, y = region)
   ) +

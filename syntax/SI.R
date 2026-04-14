@@ -313,6 +313,26 @@ plot(stack(list(solar_stack)),
 dev.off()
 
 
+## table 1
+modela <- list(s_dat_compare %>% 
+                 rst("Operational") %>% 
+                 pluck(2), 
+               s_dat_compare %>% 
+                 rst("Substation") %>% 
+                 pluck(2),
+               s_dat_compare %>% 
+                 rst("Queue") %>% 
+                 pluck(2))
+
+stargazer(modela,
+          type = "text",
+          title = "Regression Results",
+          digits = 3,
+          model.names = F,
+          column.labels = c("Operational","Substation","Queue"),
+          out = "regression_results.txt")
+
+
 # 
 # # prediction
 # class <- c("Project","Substation","Queue")
@@ -415,51 +435,81 @@ dev.off()
 
 
 ### probability change trend
-s8a <- prediction_plot(new_results[[2]], s_pts, "Substation") +
-  theme_publication() +
-  theme(legend.position = "bottom")
-s8b <- ggplot() +
-  geom_sf(data = polygons_vect, fill = "gray50", color = NA, size = 1.5) +
-  geom_spatraster(data = df_results_sub, aes(fill = pred_logReg_s_queue)) +
-  geom_sf(data = polygons_vect, fill = NA, color = "black", size = 1.5) +
-  # Use the same scales for consistency, but legend is hidden here.
-  scale_fill_distiller(palette = "RdBu", name = "Probability \ndifference ",
-                       na.value = NA,
-                       limits = c(-0.7, 0.7)) +   
-  
-  # scale_fill_distiller(palette = "Spectral", name = "Probability \ndifference ", na.value = NA) + 
-  # scale_color_manual(
-  #   name = "",
-  #   values = c("Sites" = "red")
-  # ) +
-  labs(title = "Probability change") +
-  theme_minimal() +
+s8a <- prediction_plot(new_results[[1]], s_pts, "Operational") +
   theme_publication() +
   theme(legend.position = "bottom")
 
+s8b <- prediction_plot(new_results[[2]], s_pts, "Substation") +
+  theme_publication() +
+  theme(legend.position = "bottom")
+
+s8c <- prediction_plot(new_results[[3]], inter_pts, "Queue") +
+  theme_publication() +
+  theme(legend.position = "bottom")
+
+# s8b <- ggplot() +
+#   geom_sf(data = polygons_vect, fill = "gray50", color = NA, size = 1.5) +
+#   geom_spatraster(data = df_results_sub, aes(fill = pred_logReg_s_queue)) +
+#   geom_sf(data = polygons_vect, fill = NA, color = "black", size = 1.5) +
+#   # Use the same scales for consistency, but legend is hidden here.
+#   scale_fill_distiller(palette = "RdBu", name = "Probability \ndifference ",
+#                        na.value = NA,
+#                        limits = c(-0.7, 0.7)) +   
+#   
+#   # scale_fill_distiller(palette = "Spectral", name = "Probability \ndifference ", na.value = NA) + 
+#   # scale_color_manual(
+#   #   name = "",
+#   #   values = c("Sites" = "red")
+#   # ) +
+#   labs(title = "Probability change") +
+#   theme_minimal() +
+#   theme_publication() +
+#   theme(legend.position = "bottom")
 
 
-s8c <- rst_plot(f3_glm_sub) +
-  labs(y = "Probability difference") +
-  theme(legend.position = "right")
+# s8c <- rst_plot(f3_glm_sub) +
+#   labs(y = "Probability difference") +
+#   theme(legend.position = "right")
 
 
-s8 <- ggarrange(
-  ggarrange(s8a, s8b, nrow = 1),
-  s8c, nrow = 2, 
-  labels = c("A", "B"),  # Adds labels to plots
-  label.x = 0,        # Adjust horizontal position of labels
-  label.y = 1,        # Adjust vertical position of labels
-  # vjust = 1,
-  # hjust = -1,
-  font.label = list(size = 14, face = "bold")
-)
+## table 2
+modelb <- list(f3_glm, f3_glm_sub)
 
-ggsave("./fig/s8.png", s8, width = 12, height = 12)
+stargazer(modelb,
+          type = "text",
+          title = "Regression Results",
+          digits = 3,
+          model.names = F,
+          column.labels = c("Operational","Substation"),
+          out = "regression_results.txt")
 
 
+# s8 <- ggarrange(
+#   ggarrange(s8a, s8b, nrow = 1),
+#   s8c, nrow = 2, 
+#   labels = c("A", "B"),  # Adds labels to plots
+#   label.x = 0,        # Adjust horizontal position of labels
+#   label.y = 1,        # Adjust vertical position of labels
+#   # vjust = 1,
+#   # hjust = -1,
+#   font.label = list(size = 14, face = "bold")
+# )
 
-s9 <- rst_plot(f4_glm3) +
+ggsave("./fig/s8.png", ggarrange(s8a,s8b,s8c, nrow = 1), width = 12, height = 4)
+
+
+## table 3
+modelc <- list(f4_glm3, f4_glm1)
+stargazer(modelc,
+          type = "text",
+          title = "Regression Results",
+          digits = 3,
+          model.names = F,
+          column.labels = c("1-mile","250-meter"),
+          out = "regression_results.txt")
+
+
+s9 <- rst_plot(f4_glm3, f4_glm1) +
   scale_y_continuous(
     labels = scales::label_number(accuracy = 1)             
   ) +
@@ -470,14 +520,14 @@ s9 <- rst_plot(f4_glm3) +
     
     # Style facet labels.
     strip.background = element_rect(fill = "gray80", color = NA),
-    strip.text = element_text(color = 'black', face = "bold", size = 10),
+    strip.text = element_text(color = 'black', face = "bold", size = 12),
     
     # Legend position and styling.
     legend.position = "bottom",
     legend.title = element_text(face = "bold"),
     
     # Axis styling.
-    axis.text.x = element_text(color = "black", size = 10, angle = 45, hjust = 1),
+    axis.text.x = element_text(color = "black", size = 12, angle = 45, hjust = 1),
     axis.title.x = element_text(size = 12, margin = margin(t = 10)),
     
     # Title and subtitle styling.
@@ -489,11 +539,6 @@ s9 <- rst_plot(f4_glm3) +
 ggsave("./fig/s9.png", s9, width = 12, height = 10)
 
 
-
-s10a <- rst_plot(f4_glm1) +
-  scale_y_continuous(
-    labels = scales::label_number(accuracy = 1)             
-  ) +
 
 
 tp <- sqrt(attr(ranef(f4_glm2, condVar=T)[[1]], "postVar"))*1.96
