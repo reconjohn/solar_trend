@@ -822,29 +822,6 @@ f4c <- solar_queue %>% # filter for utility scale (>1MW)
 #     plot.subtitle = element_text(size = 14, color = "gray30", margin = margin(b = 15))
 #   )
 
-name_lookup <- c(
-  "roads" = "Road\ndistance",
-  "landAcq" = "Land\nacquisition cost",
-  "slope" = "Slope",
-  "pop" = "Population\ndensity",
-  "hail" = "Hail",
-  "fire" = "Wildfire",
-  "community" = "Energy\nCommunity",
-  "lowincome" = "Percent\nlow-income",
-  "minority" = "Percent\nminority",
-  "unemploy" = "Percent\nunemployed",
-  "lulc_forest" = "Forest",
-  "lulc_grassland" = "Grassland",
-  "lulc_shrubland" = "Shrubland",
-  "lulc_riparian" = "Riparian",
-  "lulc_sparse" = "Vegetated",
-  "lulc_agriculture" = "Agriculture",
-  "lulc_developed" = "Developed",
-  "env" = "Environment\nscore",
-  "cf" = "Capacity\nfactor",
-  "lag" = "Spatial lag",
-  "tx" = "Transmission\ndistance" # Mapping tx to Transmission per your list
-)
 
 
 tidy_results <- tidy(f4_glm4, conf.int = TRUE) %>%

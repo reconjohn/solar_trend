@@ -269,8 +269,8 @@ df_model <- sampled_data %>%
   ))
 
 model_formula  <- as.formula(pred_logReg_s_queue ~ tx + landAcq + roads + slope + pop + hail + fire + community + lowincome + minority + unemploy + 
-                               lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
-                               region_mw + region_ne +  region_s + region_tex + region_w + region_mtw +
+                               lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed +
+                               region_mw + region_ne +  region_s + region_tex + region_w +
                                env + cf + lag)
 
 f3_glm <- lm(model_formula, data = df_model)
@@ -351,8 +351,8 @@ df_model <- sampled_data_sub %>%
 
 
 model_formula  <- as.formula(pred_logReg_s_queue ~ tx + landAcq + roads + slope + pop + hail + fire + community + lowincome + minority + unemploy +  
-                               lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed + lulc_other +
-                               region_mw + region_ne +  region_s + region_tex + region_w + region_mtw +
+                               lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed +
+                               region_mw + region_ne +  region_s + region_tex + region_w +
                                env + cf + lag)
 
 f3_glm_sub <- lm(model_formula, data = df_model)

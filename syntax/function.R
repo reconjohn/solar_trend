@@ -549,3 +549,28 @@ theme_publication <- function() {
       plot.title = element_text(face = "bold", size = 16, hjust = 0.5)
     )
 }
+
+
+name_lookup <- c(
+  "roads" = "Road\ndistance",
+  "landAcq" = "Land\nacquisition cost",
+  "slope" = "Slope",
+  "pop" = "Population\ndensity",
+  "hail" = "Hail",
+  "fire" = "Wildfire",
+  "community" = "Energy\nCommunity",
+  "lowincome" = "Percent\nlow-income",
+  "minority" = "Percent\nminority",
+  "unemploy" = "Percent\nunemployed",
+  "lulc_forest" = "Forest",
+  "lulc_grassland" = "Grassland",
+  "lulc_shrubland" = "Shrubland",
+  "lulc_riparian" = "Riparian",
+  "lulc_sparse" = "Vegetated",
+  "lulc_agriculture" = "Agriculture",
+  "lulc_developed" = "Developed",
+  "env" = "Environment\nscore",
+  "cf" = "Capacity\nfactor",
+  "lag" = "Spatial lag",
+  "tx" = "Transmission\ndistance" # Mapping tx to Transmission per your list
+)

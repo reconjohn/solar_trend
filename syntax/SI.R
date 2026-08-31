@@ -498,6 +498,178 @@ stargazer(modelb,
 ggsave("./fig/s8.png", ggarrange(s8a,s8b,s8c, nrow = 1), width = 12, height = 4)
 
 
+
+### additional for sensistivity analysis requested by reviewers 
+# VIF
+library(car)
+vif_p   <- vif(f3_glm) 
+vif_s   <- vif(f3_glm_sub) 
+
+
+s8a <- data.frame(
+  Predictor = names(vif_p),
+  Operational = round(vif_p, 2),
+  Substation = round(vif_s, 2)
+) %>% 
+  mutate(Predictor = dplyr::recode(Predictor, !!!name_lookup)) %>% 
+  
+  pivot_longer(cols = c(Operational, Substation),
+               names_to = "Model",
+               values_to = "VIF") %>% 
+  mutate(Model = str_wrap(Model, width = 10)) %>% 
+  
+  ggplot(aes(x = reorder(Predictor, VIF), y = VIF, fill = Model)) +
+  geom_col(position = position_dodge(width = 0.7)) +
+  
+  scale_fill_manual(values = c("#1f78b4", "#33a02c"),
+                    labels = c("Operational", "Substation")) +
+  labs(x = "Predictor",
+       y = "Variance Inflation Factor (VIF)",
+       fill = "Model",
+       title = "Comparison of VIFs across Operational and Substation models") +
+  
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    legend.position = "bottom",
+    axis.text.x = element_text(color = "black", size = 10, angle = 40, hjust = 1),
+    legend.box = "horizontal",
+    legend.box.margin = margin(r = 20)     # add right-side margin
+    
+  )
+
+
+model_formula  <- as.formula(pred_logReg_s_queue ~ pop + hail)
+
+df_model <- sampled_data %>% 
+  mutate(across(
+    .cols = setdiff(names(.), c("pred_logReg_s_queue", names(.)[str_detect(names(.), "lulc|region")])),
+    .fns = ~ scale(.) %>% as.numeric() # scale predictors before regression 
+  ))
+
+
+f3_glm_simple <- lm(model_formula, data = df_model)
+
+
+df_model <- sampled_data_sub %>% 
+  mutate(across(
+    .cols = setdiff(names(.), c("pred_logReg_s_queue", names(.)[str_detect(names(.), "lulc|region")])),
+    .fns = ~ scale(.) %>% as.numeric() # scale predictors before regression 
+  ))
+
+
+f3_glm_sub_simple <- lm(model_formula, data = df_model)
+
+
+
+vif_p   <- vif(f3_glm_simple) 
+vif_s   <- vif(f3_glm_sub_simple) 
+
+
+s8b <- data.frame(
+  Predictor = names(vif_p),
+  Operational = round(vif_p, 2),
+  Substation = round(vif_s, 2)
+) %>% 
+  mutate(Predictor = dplyr::recode(Predictor, !!!name_lookup)) %>% 
+  
+  pivot_longer(cols = c(Operational, Substation),
+               names_to = "Model",
+               values_to = "VIF") %>% 
+  
+  ggplot(aes(x = reorder(Predictor, VIF), y = VIF, fill = Model)) +
+  geom_col(position = position_dodge(width = 0.7)) +
+  
+  scale_fill_manual(values = c("#1f78b4", "#33a02c"),
+                    labels = c("Operational", "Substation")) +
+  labs(x = "Predictor",
+       y = "Variance Inflation Factor (VIF)",
+       fill = "",
+       title = "Comparison of VIFs of the simpler models") +
+  
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    legend.position = "none"
+  )
+
+s8c <- ggplot(df_model, aes(x = pop, y = hail)) +
+  geom_point(color = "steelblue", alpha = 0.7) +
+  labs(x = "Population Density",
+       y = "Hail") +
+  annotate("text",
+           x = max(df_model$pop, na.rm = TRUE),
+           y = max(df_model$hail, na.rm = TRUE),
+           label = paste0("r = ",
+                          round(cor(df_model$hail, df_model$pop,
+                                    use = "complete.obs"), 3)),
+           hjust = 1, vjust = 1,
+           size = 5)
+
+
+ggsave("./fig/s8a.png", 
+       ggarrange(s8a, 
+                 ggarrange(s8b,s8c, nrow = 1),
+                 nrow = 2,
+                 heights = c(1.5,1)), width = 12, height = 10)
+
+
+
+### model without pop 
+df_model <- sampled_data %>% 
+  mutate(across(
+    .cols = setdiff(names(.), c("pred_logReg_s_queue", names(.)[str_detect(names(.), "lulc|region")])),
+    .fns = ~ scale(.) %>% as.numeric() # scale predictors before regression 
+  ))
+
+model_formula  <- as.formula(pred_logReg_s_queue ~ tx + landAcq + roads + slope + hail + fire + community + lowincome + minority + unemploy + 
+                               lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed +
+                               region_mw + region_ne +  region_s + region_tex + region_w +
+                               env + cf + lag)
+
+f3_glm_pop <- lm(model_formula, data = df_model)
+
+
+m1 <- tidy(f3_glm) %>% mutate(model = "Model: pop included")
+m2 <- tidy(f3_glm_pop) %>% mutate(model = "Model: pop excluded")
+
+
+# Combine
+coef_df <- bind_rows(m1, m2)
+
+coef_df <- coef_df %>%
+  filter(term != "(Intercept)") %>%
+  mutate(
+    lower = estimate - 1.96*std.error,
+    upper = estimate + 1.96*std.error
+  ) %>% 
+  mutate(term = dplyr::recode(term, !!!name_lookup)) 
+
+
+s8bb <- ggplot(coef_df, aes(x = reorder(term, estimate), y = estimate, color = model)) +
+  geom_point(position = position_dodge(width = 0.6), size = 2) +
+  geom_errorbar(aes(ymin = lower, ymax = upper),
+                width = 0.2,
+                position = position_dodge(width = 0.6)) +
+  labs(
+    x = "Coefficient",
+    y = "Estimate (±1.96*SE)",
+    color = "Model"
+  ) +
+  
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "bottom",
+    axis.text.y = element_text(size = 10),
+    axis.text.x = element_text(color = "black", size = 10, angle = 40, hjust = 1),
+  )
+
+
+ggsave("./fig/s8b.png", 
+       s8bb, width = 12, height = 6)
+
+
+
 ## table 3
 modelc <- list(f4_glm3, f4_glm1)
 stargazer(modelc,
@@ -614,6 +786,7 @@ s10 <- ggarrange(s10a, s10b,
   font.label = list(size = 14, face = "bold"))
 
 ggsave("./fig/s10.png", s10, width = 12, height = 12)
+
 
 
 
