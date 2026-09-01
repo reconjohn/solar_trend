@@ -36,7 +36,7 @@ s_ab <- fasterize::fasterize(sf = s_ab_sf,
                              raster = raster(base_ras), 
                              field = "id") # Rasterize points
 
-### solar interconnection
+### solar queue
 s_ex_inter <- raster(solar_inter_rast)
 s_ab_inter <- fasterize::fasterize(sf = s_inter_ab_sf, 
                                  raster = raster(base_ras), 
@@ -67,11 +67,20 @@ write.csv(solar.cov.bg.sub, "./data/bg_cov_solar_sub.csv", row.names = FALSE)
 write.csv(solar.cov.existing.sub, "./data/existing_cov_solar_sub.csv", row.names = FALSE)
 
 
-### solar interconnect
+### solar queue
 solar.cov.bg.inter <- as.data.frame(zonal(x = solar_IV_new, z = s_ab_inter, fun ='mean', na.rm = TRUE)) %>%
   mutate(treat = 0)
 solar.cov.existing.inter <- as.data.frame(zonal(x = solar_IV_new, z = s_ex_inter, fun ='mean', na.rm = TRUE)) %>%
   mutate(treat = 1)
 write.csv(solar.cov.bg.inter, "./data/bg_cov_solar_inter.csv", row.names = FALSE)
 write.csv(solar.cov.existing.inter, "./data/existing_cov_solar_inter.csv", row.names = FALSE)
+
+
+### solar queue based on old coeff
+solar.cov.bg.inter <- as.data.frame(zonal(x = solar_IV, z = s_ab_inter, fun ='mean', na.rm = TRUE)) %>%
+  mutate(treat = 0)
+solar.cov.existing.inter <- as.data.frame(zonal(x = solar_IV, z = s_ex_inter, fun ='mean', na.rm = TRUE)) %>%
+  mutate(treat = 1)
+write.csv(solar.cov.bg.inter, "./data/bg_cov_solar_inter_old.csv", row.names = FALSE)
+write.csv(solar.cov.existing.inter, "./data/existing_cov_solar_inter_old.csv", row.names = FALSE)
 

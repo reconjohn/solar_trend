@@ -500,20 +500,39 @@ ggsave("./fig/s8.png", ggarrange(s8a,s8b,s8c, nrow = 1), width = 12, height = 4)
 
 
 ### additional for sensistivity analysis requested by reviewers 
+
+data <- s_dat_compare %>% 
+  filter(class == "Operational")
+glm_o <- glm(treat ~ tx + landAcq + roads + slope + pop + hail + fire + community + lowincome + minority + unemploy +
+               lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed  +
+               env + cf + lag, 
+             data=data, family = binomial(link="logit"))
+
+
+data <- s_dat_compare %>% 
+  filter(class == "Queue")
+glm_q <- glm(treat ~ tx + landAcq + roads + slope + pop + hail + fire + community + lowincome + minority + unemploy +
+               lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed +
+               env + cf + lag, 
+             data=data, family = binomial(link="logit"))
+
+
+
+
 # VIF
 library(car)
-vif_p   <- vif(f3_glm) 
-vif_s   <- vif(f3_glm_sub) 
+vif_o   <- vif(glm_o) 
+vif_q   <- vif(glm_q) 
 
 
 s8a <- data.frame(
-  Predictor = names(vif_p),
-  Operational = round(vif_p, 2),
-  Substation = round(vif_s, 2)
+  Predictor = names(vif_o),
+  Operational = round(vif_o, 2),
+  Queue = round(vif_q, 2)
 ) %>% 
   mutate(Predictor = dplyr::recode(Predictor, !!!name_lookup)) %>% 
   
-  pivot_longer(cols = c(Operational, Substation),
+  pivot_longer(cols = c(Operational, Queue),
                names_to = "Model",
                values_to = "VIF") %>% 
   mutate(Model = str_wrap(Model, width = 10)) %>% 
@@ -522,11 +541,11 @@ s8a <- data.frame(
   geom_col(position = position_dodge(width = 0.7)) +
   
   scale_fill_manual(values = c("#1f78b4", "#33a02c"),
-                    labels = c("Operational", "Substation")) +
+                    labels = c("Operational", "Queue")) +
   labs(x = "Predictor",
        y = "Variance Inflation Factor (VIF)",
        fill = "Model",
-       title = "Comparison of VIFs across Operational and Substation models") +
+       title = "Comparison of VIFs across Operational and Queue models") +
   
   theme_minimal(base_size = 12) +
   theme(
@@ -539,69 +558,66 @@ s8a <- data.frame(
   )
 
 
-model_formula  <- as.formula(pred_logReg_s_queue ~ pop + hail)
 
-df_model <- sampled_data %>% 
-  mutate(across(
-    .cols = setdiff(names(.), c("pred_logReg_s_queue", names(.)[str_detect(names(.), "lulc|region")])),
-    .fns = ~ scale(.) %>% as.numeric() # scale predictors before regression 
-  ))
+data <- s_dat_compare %>% 
+  filter(class == "Operational")
+glm_os <- glm(treat ~ pop + hail, 
+              data=data, family = binomial(link="logit"))
 
 
-f3_glm_simple <- lm(model_formula, data = df_model)
+data <- s_dat_compare %>% 
+  filter(class == "Queue")
+glm_qs <- glm(treat ~ pop + hail, 
+              data=data, family = binomial(link="logit"))
 
 
-df_model <- sampled_data_sub %>% 
-  mutate(across(
-    .cols = setdiff(names(.), c("pred_logReg_s_queue", names(.)[str_detect(names(.), "lulc|region")])),
-    .fns = ~ scale(.) %>% as.numeric() # scale predictors before regression 
-  ))
-
-
-f3_glm_sub_simple <- lm(model_formula, data = df_model)
-
-
-
-vif_p   <- vif(f3_glm_simple) 
-vif_s   <- vif(f3_glm_sub_simple) 
-
+vif_o   <- vif(glm_os) 
+vif_q   <- vif(glm_qs) 
 
 s8b <- data.frame(
-  Predictor = names(vif_p),
-  Operational = round(vif_p, 2),
-  Substation = round(vif_s, 2)
+  Predictor = names(vif_o),
+  Operational = round(vif_o, 2),
+  Queue = round(vif_q, 2)
 ) %>% 
   mutate(Predictor = dplyr::recode(Predictor, !!!name_lookup)) %>% 
   
-  pivot_longer(cols = c(Operational, Substation),
+  pivot_longer(cols = c(Operational, Queue),
                names_to = "Model",
                values_to = "VIF") %>% 
+  mutate(Model = str_wrap(Model, width = 10)) %>% 
   
   ggplot(aes(x = reorder(Predictor, VIF), y = VIF, fill = Model)) +
   geom_col(position = position_dodge(width = 0.7)) +
   
   scale_fill_manual(values = c("#1f78b4", "#33a02c"),
-                    labels = c("Operational", "Substation")) +
+                    labels = c("Operational", "Queue")) +
   labs(x = "Predictor",
        y = "Variance Inflation Factor (VIF)",
-       fill = "",
-       title = "Comparison of VIFs of the simpler models") +
+       fill = "Model",
+       title = "Comparison of VIFs across Operational and Queue models") +
   
   theme_minimal(base_size = 12) +
   theme(
     plot.title = element_text(face = "bold"),
-    legend.position = "none"
+    legend.position = "bottom",
+    axis.text.x = element_text(color = "black", size = 10, hjust = 1),
+    legend.box = "horizontal",
+    legend.box.margin = margin(r = 20)     # add right-side margin
+    
   )
 
-s8c <- ggplot(df_model, aes(x = pop, y = hail)) +
+data <- s_dat_compare %>% 
+  filter(class == "Operational")
+
+s8c <- ggplot(data, aes(x = pop, y = hail)) +
   geom_point(color = "steelblue", alpha = 0.7) +
   labs(x = "Population Density",
        y = "Hail") +
   annotate("text",
-           x = max(df_model$pop, na.rm = TRUE),
-           y = max(df_model$hail, na.rm = TRUE),
+           x = max(data$pop, na.rm = TRUE),
+           y = max(data$hail, na.rm = TRUE),
            label = paste0("r = ",
-                          round(cor(df_model$hail, df_model$pop,
+                          round(cor(data$hail, data$pop,
                                     use = "complete.obs"), 3)),
            hjust = 1, vjust = 1,
            size = 5)
@@ -616,22 +632,15 @@ ggsave("./fig/s8a.png",
 
 
 ### model without pop 
-df_model <- sampled_data %>% 
-  mutate(across(
-    .cols = setdiff(names(.), c("pred_logReg_s_queue", names(.)[str_detect(names(.), "lulc|region")])),
-    .fns = ~ scale(.) %>% as.numeric() # scale predictors before regression 
-  ))
+data <- s_dat_compare %>% 
+  filter(class == "Operational")
+glm_op <- glm(treat ~ tx + landAcq + roads + slope + hail + fire + community + lowincome + minority + unemploy +
+                lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed  +
+                env + cf + lag, 
+              data=data, family = binomial(link="logit"))
 
-model_formula  <- as.formula(pred_logReg_s_queue ~ tx + landAcq + roads + slope + hail + fire + community + lowincome + minority + unemploy + 
-                               lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed +
-                               region_mw + region_ne +  region_s + region_tex + region_w +
-                               env + cf + lag)
-
-f3_glm_pop <- lm(model_formula, data = df_model)
-
-
-m1 <- tidy(f3_glm) %>% mutate(model = "Model: pop included")
-m2 <- tidy(f3_glm_pop) %>% mutate(model = "Model: pop excluded")
+m1 <- tidy(glm_o) %>% mutate(model = "Population density included")
+m2 <- tidy(glm_op) %>% mutate(model = "Population density excluded")
 
 
 # Combine
@@ -648,13 +657,15 @@ coef_df <- coef_df %>%
 
 s8bb <- ggplot(coef_df, aes(x = reorder(term, estimate), y = estimate, color = model)) +
   geom_point(position = position_dodge(width = 0.6), size = 2) +
+  geom_hline(yintercept = 0, linetype = "dotted") +
   geom_errorbar(aes(ymin = lower, ymax = upper),
                 width = 0.2,
                 position = position_dodge(width = 0.6)) +
   labs(
     x = "Coefficient",
     y = "Estimate (±1.96*SE)",
-    color = "Model"
+    color = "Model",
+    title = "Operational project model comparison"
   ) +
   
   theme_minimal(base_size = 14) +
@@ -667,6 +678,150 @@ s8bb <- ggplot(coef_df, aes(x = reorder(term, estimate), y = estimate, color = m
 
 ggsave("./fig/s8b.png", 
        s8bb, width = 12, height = 6)
+
+
+### old/new cov sensitivity 
+s_dat_inter <- solar.cov.bg.inter %>%
+  filter(group == 5) %>%
+  dplyr::select(-group) %>%
+  rbind(solar.cov.existing.inter) %>%
+  mutate(treat = factor(treat)) %>%
+  na.omit()
+
+
+glm1_solar <- glm(treat ~ tx + landAcq + roads + slope + pop + hail + fire + community + lowincome + minority + unemploy +
+                    lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed +
+                    env + cf + lag,
+                  data=s_dat_inter, family = binomial(link="logit"))
+# summary(glm1_solar)
+
+
+s.bg.que.old <- read_csv("./data/bg_cov_solar_inter_old.csv")
+s.ex.que.old <- read_csv("./data/existing_cov_solar_inter_old.csv")
+
+s.bg.que.old <- s.bg.que.old %>% 
+  mutate(group = c(rep(seq(1,10,1), each = floor(nrow(s.bg.que.old)/10)),rep(10,1))) # modify the last rep(10,x)
+
+s_dat_que <- s.bg.que.old %>%
+  filter(group == 5) %>%
+  dplyr::select(-group) %>%
+  rbind(s.ex.que.old) %>%
+  mutate(treat = factor(treat)) %>%
+  na.omit()
+
+
+glm1_solar1 <- glm(treat ~ tx + landAcq + roads + slope + pop + hail + fire + community + lowincome + minority + unemploy +
+                    lulc_forest + lulc_grassland + lulc_shrubland + lulc_riparian + lulc_sparse + lulc_agriculture + lulc_developed +
+                    env + cf + lag,
+                  data=s_dat_que, family = binomial(link="logit"))
+# summary(glm1_solar)
+
+
+m1 <- tidy(glm1_solar) %>% mutate(model = "Updated TX & LULC")
+m2 <- tidy(glm1_solar1) %>% mutate(model = "2017 TX & 2016 LULC")
+
+
+# Combine
+coef_df <- bind_rows(m1, m2)
+
+coef_df <- coef_df %>%
+  filter(term != "(Intercept)") %>%
+  mutate(
+    lower = estimate - 1.96*std.error,
+    upper = estimate + 1.96*std.error
+  ) %>% 
+  mutate(term = dplyr::recode(term, !!!name_lookup)) 
+
+
+s8cc <- ggplot(coef_df, aes(x = reorder(term, estimate), y = estimate, color = model)) +
+  geom_point(position = position_dodge(width = 0.6), size = 2) +
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  geom_errorbar(aes(ymin = lower, ymax = upper),
+                width = 0.2,
+                position = position_dodge(width = 0.6)) +
+  labs(
+    x = "Coefficient",
+    y = "Estimate (±1.96*SE)",
+    color = "Model",
+    title = "Queue project model comparison"
+  ) +
+  
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "bottom",
+    axis.text.y = element_text(size = 10),
+    axis.text.x = element_text(color = "black", size = 10, angle = 45, hjust = 1),
+  )
+
+ggsave("./fig/s8c.png", 
+       s8cc, width = 12, height = 6)
+
+
+### spatial autocorrelation
+set.seed(42)
+n_total_pixels <- 500000  # Simulating a large raster dataset
+# df <- data.frame(
+#   x = runif(n_total_pixels, min = -125, max = -67), # US Longitude range
+#   y = runif(n_total_pixels, min = 25, max = 49),   # US Latitude range
+#   residuals = rnorm(n_total_pixels, mean = 0, sd = 1)
+# )
+
+
+
+
+
+sample_size <- 10000
+
+if (nrow(df) > sample_size) {
+  df_sample <- df[sample(1:nrow(df), sample_size, replace = FALSE), ]
+  message(paste("Subsampled", sample_size, "pixels out of", nrow(df), "total pixels."))
+} else {
+  df_sample <- df
+}
+
+
+coords <- cbind(df_sample$x, df_sample$y)
+
+# Find the 4 nearest neighbors for each cell centroid
+# k = 4 is standard for grid structures (equivalent to Rook adjacency)
+knn_neighbors <- knearneigh(coords, k = 4)
+
+# Convert to an nb neighbor object
+nb_list <- knn2nb(knn_neighbors)
+
+# ------------------------------------------------------------------------------
+# 4. CREATE THE ROW-STANDARDIZED SPATIAL WEIGHTS MATRIX (W)
+# ------------------------------------------------------------------------------
+# Style "W" row-standardizes the weights so they sum to 1 for each observation.
+spatial_weights <- nb2listw(nb_list, style = "W")
+
+# ------------------------------------------------------------------------------
+# 5. RUN THE SPATIAL AUTOCORRELATION TESTS
+# ------------------------------------------------------------------------------
+message("\n--- Running Analytical Moran's I Test ---")
+# Standard analytical test (assumes asymptotic normality)
+moran_analytical <- moran.test(df_sample$residuals, spatial_weights)
+print(moran_analytical)
+
+
+message("\n--- Running Monte Carlo Permutation Test (999 simulations) ---")
+# Robust permutation test that does not rely on normality assumptions
+moran_mc <- moran.mc(df_sample$residuals, spatial_weights, nsim = 999)
+print(moran_mc)
+
+# ------------------------------------------------------------------------------
+# 6. EXTRACT RESULTS FOR YOUR REVIEWER RESPONSE
+# ------------------------------------------------------------------------------
+obs_I <- moran_mc$statistic
+p_val <- moran_mc$p.value
+
+cat("\n======================================================================\n")
+cat(sprintf("Moran's I Statistic: %0.4f\n", obs_I))
+cat(sprintf("Permutation p-value: %0.4f\n", p_val))
+cat("======================================================================\n")
+
+
+
 
 
 
@@ -786,7 +941,6 @@ s10 <- ggarrange(s10a, s10b,
   font.label = list(size = 14, face = "bold"))
 
 ggsave("./fig/s10.png", s10, width = 12, height = 12)
-
 
 
 
