@@ -245,11 +245,11 @@ new_results <- rast("./data/trend_surface.tif")
 
 
 # f4
-# df_results <- new_results[[3]] - new_results[[1]] # queue - project
-# # names(model_data)
-# model_data <- rast(list(df_results, rast(solar_IV_new)))
-# # model_data <- stack(list(raster(df_results), solar_IV))
-# 
+df_results <- new_results[[3]] - new_results[[1]] # queue - project
+# names(model_data)
+model_data <- rast(list(df_results, rast(solar_IV_new)))
+# model_data <- stack(list(raster(df_results), solar_IV))
+
 # sample_size <- 100000
 # valid_cells_mask <- rast(solar_absence_roi) == 1
 # valid_cell_numbers <- cells(valid_cells_mask) # get index for true cells
@@ -274,6 +274,199 @@ model_formula  <- as.formula(pred_logReg_s_queue ~ tx + landAcq + roads + slope 
                                env + cf + lag)
 
 f3_glm <- lm(model_formula, data = df_model)
+
+### Moran's I test
+pred_raster <- predict(model_data, f3_glm)
+pred_raster_m <- mask_solar(pred_raster, rast(solar_absence_roi))
+
+s21a <- ggplot() +
+  geom_sf(data = polygons_vect, fill = "gray50", color = NA) +
+  geom_spatraster(data = pred_raster_m, aes(fill = lyr1)) +
+  geom_sf(data = polygons_vect, fill = NA, color = "black", linewidth = 0.5) +
+  # Use the same scales for consistency, but legend is hidden here.
+  scale_fill_distiller(palette = "RdBu", name = "Probability   \ndifference ",
+                       na.value = NA,
+                       limits = c(-0.7, 0.7)) +      # Emphasizes extremes, compresses center
+
+  labs(title = "Prediction of difference model") +
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.y = element_blank(), # Remove horizontal grid lines for clarity.
+    panel.grid = element_blank(),
+    panel.spacing = unit(1.5, "lines"),
+    
+    # Style facet labels.
+    strip.background = element_rect(fill = "white", color = NA),
+    strip.text = element_text(color = 'black', face = "bold", size = 10),
+    
+    # Legend position and styling.
+    legend.position = "right",
+    legend.title = element_text(face = "bold"),
+    
+    # Axis styling.
+    # axis.text = element_text(color = "black", size = 10),
+    axis.title.x = element_text(size = 12, margin = margin(t = 10)),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    
+    # Title and subtitle styling.
+    plot.title = element_text(face = "bold", size = 18, margin = margin(b = 5), hjust = 0.5),
+    plot.subtitle = element_text(size = 14, color = "gray30", margin = margin(b = 15)),
+  )
+
+
+# Compute the residual raster (Observed Difference - Predicted Difference)
+residual_raster <- model_data[["pred_logReg_s_queue"]] - pred_raster_m
+
+
+s21b <- ggplot() +
+  geom_sf(data = polygons_vect, fill = "gray50", color = NA) +
+  geom_spatraster(data = residual_raster, aes(fill = pred_logReg_s_queue)) +
+  geom_sf(data = polygons_vect, fill = NA, color = "black", linewidth = 0.5) +
+  # Use the same scales for consistency, but legend is hidden here.
+  scale_fill_distiller(palette = "RdBu", name = "Residuals",
+                       na.value = NA) +      # Emphasizes extremes, compresses center
+  
+  labs(title = "Residuals (Observed - Predicted)") +
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.y = element_blank(), # Remove horizontal grid lines for clarity.
+    panel.grid = element_blank(),
+    panel.spacing = unit(1.5, "lines"),
+    
+    # Style facet labels.
+    strip.background = element_rect(fill = "white", color = NA),
+    strip.text = element_text(color = 'black', face = "bold", size = 10),
+    
+    # Legend position and styling.
+    legend.position = "right",
+    legend.title = element_text(face = "bold"),
+    
+    # Axis styling.
+    # axis.text = element_text(color = "black", size = 10),
+    axis.title.x = element_text(size = 12, margin = margin(t = 10)),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    
+    # Title and subtitle styling.
+    plot.title = element_text(face = "bold", size = 18, margin = margin(b = 5), hjust = 0.5),
+    plot.subtitle = element_text(size = 14, color = "gray30", margin = margin(b = 15)),
+  )
+
+
+library(terra)
+library(spdep)
+
+# Extract residual values ---
+vals <- values(residual_raster, na.rm = FALSE)
+
+# Identify valid (non-NA) cells
+valid_cells <- which(!is.na(vals))
+
+# Randomly select 10 focal cells ---
+set.seed(123)
+focal_cells <- sample(valid_cells, 10)
+
+# Function to compute Moran's I for a local neighborhood ---
+compute_local_moran <- function(cell_id, raster, n_neighbors = 100) {
+  
+  # Get focal cell coordinates
+  focal_xy <- xyFromCell(raster, cell_id)
+  
+  # Get coordinates for all valid cells
+  all_xy <- xyFromCell(raster, valid_cells)
+  
+  # Compute distances from focal cell
+  dists <- sqrt((all_xy[,1] - focal_xy[1])^2 + (all_xy[,2] - focal_xy[2])^2)
+  
+  # Select nearest ~500 cells
+  idx <- order(dists)[1:n_neighbors]
+  local_cells <- valid_cells[idx]
+  
+  # Extract local coordinates and values
+  coords_local <- all_xy[idx, ]
+  vals_local <- vals[local_cells]
+  
+  # Build k-nearest neighbor structure (k = 8)
+  knn <- knearneigh(coords_local, k = 8)
+  nb <- knn2nb(knn)
+  
+  lw <- nb2listw(nb, style = "W", zero.policy = TRUE)
+  
+  # Moran's I
+  moran.test(vals_local, lw, zero.policy = TRUE)
+}
+
+run_batch <- function() {
+  
+  # pick 10 new random focal cells
+  focal_cells <- sample(valid_cells, 10)
+  
+  # compute Moran's I for each focal cell
+  local_morans <- lapply(focal_cells, compute_local_moran, raster = residual_raster)
+  
+  # convert to a data frame
+  map_df(seq_along(local_morans), function(i) {
+    test <- local_morans[[i]]
+    tibble(
+      batch      = current_batch,
+      sample_id  = i,
+      moran_I    = test$estimate[["Moran I statistic"]],
+      p_value    = test$p.value
+    )
+  })
+}
+
+all_morans <- map_df(1:10, function(b) {
+  current_batch <<- b   # store batch number for labeling
+  run_batch()
+})
+
+# # loop over focal cells and compute Moran's I ---
+# local_morans <- lapply(focal_cells, compute_local_moran, raster = residual_raster)
+# 
+# 
+# moran_df <- map_df(seq_along(local_morans), function(i) {
+#   test <- local_morans[[i]]
+#   tibble(
+#     sample_id = i,
+#     moran_I   = test$estimate[["Moran I statistic"]],
+#     p_value   = test$p.value,
+#     sig       = ifelse(p_value < 0.05, "Significant", "Not significant")
+#   )
+# })
+
+all_morans <- all_morans %>%
+  mutate(batch = factor(batch))
+
+avg_moran <- mean(all_morans$moran_I, na.rm = TRUE)
+
+s21c <- ggplot(all_morans, aes(x = batch, y = moran_I)) +
+  geom_boxplot(outlier.shape = NA, fill = "gray90", color = "black") +
+  geom_jitter(width = 0.15, size = 2, alpha = 0.7, color = "steelblue") +
+  geom_hline(yintercept = avg_moran,
+             linetype = "dashed", color = "red", size = 1.1) +
+  labs(
+    x = "Replication (Batch)",
+    y = "Moran's I",
+    title = "Moran's I across 10 replications"
+  ) +
+  theme_bw() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.text.x = element_text(size = 10),
+    legend.position = "bottom"
+  )
+
+ggsave("./fig/s21.png", 
+       ggarrange(
+         ggarrange(f2c, s21a, nrow = 1),
+         ggarrange(s21b, s21c, nrow = 1),
+         nrow = 2
+       ), width = 12, height = 8)
+
 
 
 # df_model$region <- names(df_model %>% dplyr::select(starts_with("region_")))[

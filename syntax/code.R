@@ -473,7 +473,7 @@ f1 <- s_dat_compare %>%
   # ) +
   
   labs(
-    x = "Odds ratio (log scale)",
+    x = "Log-Odds",
     y = "", # Y-axis title is removed as variable names are self-explanatory.
     title = ""
   ) +
